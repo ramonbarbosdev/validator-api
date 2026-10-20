@@ -1,0 +1,6 @@
+# Exemplo: HTTPS para webhook e API (validator-front na VPS)
+# Ajuste dominio e upstream WEBHOOK_PORT (padrao 8765)
+
+validador.example.com {
+    reverse_proxy localhost:8765
+}

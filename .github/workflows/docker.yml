@@ -1,0 +1,123 @@
+# Producao apenas: build GHCR + deploy Docker na VPS (padrao esimples-api)
+name: Build and Deploy validator-api (prod)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  CONTAINER_PORT: 8765
+  DOCKER_NETWORK: network-esimples
+  CONTAINER_NAME: validator-api
+  HOST_PORT: 8765
+  ENV_FILE: /home/app/validator-api.env
+  MOUNT_REPO: /home/app/esimples-api
+  MOUNT_PACK: /home/app/cursor-api-validator-java
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    environment: prod
+    outputs:
+      image_name: ${{ steps.vars.outputs.image_name }}
+      image_tag: ${{ steps.vars.outputs.image_tag }}
+    steps:
+      - name: Image vars
+        id: vars
+        run: |
+          echo "image_name=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+          echo "image_tag=prod-${{ github.sha }}" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ steps.vars.outputs.image_name }}:${{ steps.vars.outputs.image_tag }}
+            ${{ env.REGISTRY }}/${{ steps.vars.outputs.image_name }}:prod-latest
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    environment: prod
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT }}
+          script_stop: true
+          script: |
+            set -e
+
+            IMAGE="${{ env.REGISTRY }}/${{ needs.build-and-push.outputs.image_name }}:${{ needs.build-and-push.outputs.image_tag }}"
+            CONTAINER_NAME="${{ env.CONTAINER_NAME }}"
+            HOST_PORT="${{ env.HOST_PORT }}"
+            CONTAINER_PORT="${{ env.CONTAINER_PORT }}"
+            ENV_FILE="${{ env.ENV_FILE }}"
+            DOCKER_NETWORK="${{ env.DOCKER_NETWORK }}"
+            MOUNT_REPO="${{ env.MOUNT_REPO }}"
+            MOUNT_PACK="${{ env.MOUNT_PACK }}"
+
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login "${{ env.REGISTRY }}" -u "${{ github.actor }}" --password-stdin
+
+            if ! docker network inspect "$DOCKER_NETWORK" >/dev/null 2>&1; then
+              docker network create "$DOCKER_NETWORK"
+            fi
+
+            if [ ! -f "$ENV_FILE" ]; then
+              echo "Arquivo de env ausente: $ENV_FILE"
+              exit 1
+            fi
+            if [ ! -d "$MOUNT_REPO/.git" ]; then
+              echo "Clone git do esimples-api ausente em $MOUNT_REPO"
+              exit 1
+            fi
+            if [ ! -d "$MOUNT_PACK" ]; then
+              echo "Pacote validador ausente em $MOUNT_PACK"
+              exit 1
+            fi
+
+            docker pull "$IMAGE"
+
+            docker stop "$CONTAINER_NAME" || true
+            docker rm "$CONTAINER_NAME" || true
+
+            docker run -d \
+              --name "$CONTAINER_NAME" \
+              --network "$DOCKER_NETWORK" \
+              --restart unless-stopped \
+              --memory=1g \
+              -p "$HOST_PORT:$CONTAINER_PORT" \
+              --env-file "$ENV_FILE" \
+              -e REPO_ROOT=/data/esimples-api \
+              -e CURSOR_API_VALIDATOR_ROOT=/data/cursor-api-validator-java \
+              -e WEBHOOK_HOST=0.0.0.0 \
+              -e WEBHOOK_PORT=8765 \
+              -v "$MOUNT_REPO:/data/esimples-api" \
+              -v "$MOUNT_PACK:/data/cursor-api-validator-java:ro" \
+              "$IMAGE"
+
+            docker image prune -a -f
+
+            echo "Deploy producao finished successfully"

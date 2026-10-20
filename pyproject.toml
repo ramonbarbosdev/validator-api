@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "validator-api"
+version = "0.1.0"
+description = "Webhook, fila e runner para validacao de PR com cursor-api-validator-java"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "cursor-sdk>=0.1.0",
+]
+
+[project.optional-dependencies]
+dev = ["ruff>=0.6"]
+
+[project.scripts]
+validator-api = "validator_api.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

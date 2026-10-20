@@ -1,0 +1,15 @@
+[Unit]
+Description=validator-api PR review webhook
+After=network.target
+
+[Service]
+Type=simple
+User=validator
+WorkingDirectory=/opt/validator-api
+EnvironmentFile=/opt/validator-api/.env
+ExecStart=/opt/validator-api/.venv/bin/validator-api serve
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,8 @@
+# Troque o dominio e e-mail (Let's Encrypt automatico no Caddy)
+{
+	email admin@example.com
+}
+
+validador.example.com {
+	reverse_proxy validator-api:8765
+}
