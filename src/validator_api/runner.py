@@ -13,6 +13,7 @@ from validator_api.config import PrReviewConfig
 from validator_api.gate import should_validate
 from validator_api.github import (
     fetch_pr,
+    parse_report_verdict,
     resolve_token,
     sync_block_label,
     upsert_review_comment,
@@ -204,7 +205,15 @@ def run_validation(cfg: PrReviewConfig, pr_number: int, *, force: bool = False) 
     else:
         report_body = full_report
     upsert_review_comment(repo, pr_number, report_body, token)
-    sync_block_label(repo, pr_number, full_report, cfg.block_label, token)
+    try:
+        sync_block_label(repo, pr_number, full_report, cfg.block_label, token)
+        if parse_report_verdict(full_report) != "aprovavel":
+            print(
+                f"PR #{pr_number}: label `{cfg.block_label or 'Alteração Necessária'}` aplicada.",
+                flush=True,
+            )
+    except RuntimeError as e:
+        print(f"PR #{pr_number}: aviso — label de bloqueio falhou: {e}", flush=True)
 
     if sha:
         mark_validated(cfg.state_path, pr_number, sha)

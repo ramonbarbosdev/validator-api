@@ -5,6 +5,7 @@ import hashlib
 import hmac
 import json
 import os
+import re
 import subprocess
 import unicodedata
 import urllib.error
@@ -122,20 +123,41 @@ def upsert_review_comment(repo: str, pr_number: int, body: str, token: str) -> N
     api_request("POST", issue_url, token, {"body": body})
 
 
+def _norm_report(text: str) -> str:
+    folded = unicodedata.normalize("NFKD", text)
+    return folded.encode("ascii", "ignore").decode().lower()
+
+
+def parse_report_verdict(report_text: str) -> str | None:
+    """Retorna 'aprovavel' ou 'nao aprovavel' (None se nao houver veredito)."""
+    nbody = _norm_report(report_text)
+    m = re.search(
+        r"conclus[aã]o\s*:?\s*"
+        r"(nao\s+aprov[aá]vel|aprov[aá]vel\s+com\s+ressalvas|aprov[aá]vel)\b",
+        nbody,
+    )
+    if not m:
+        m = re.search(
+            r"(?m)^##\s*conclus[aã]o\s*\n\s*"
+            r"(nao\s+aprov[aá]vel|aprov[aá]vel\s+com\s+ressalvas|aprov[aá]vel)\s*$",
+            nbody,
+        )
+    if not m:
+        return None
+    raw = m.group(1)
+    if "nao" in raw or "ressalvas" in raw:
+        return "nao aprovavel"
+    return "aprovavel"
+
+
 def sync_block_label(repo: str, pr_number: int, report_text: str, block_label: str, token: str) -> None:
+    """Apos o comentario de review: APROVAVEL remove a label; caso contrario aplica."""
     label = (block_label or "Alteração Necessária").strip()
     if not label:
         return
-    norm = unicodedata.normalize("NFD", report_text)
-    for ch in ("\u0300", "\u0301", "\u0302", "\u0303", "\u0308"):
-        norm = norm.replace(ch, "")
-    low = norm.lower()
-    nao = "nao aprovavel" in low.replace("ã", "a")
-    aprovavel = "conclusao:" in low and "aprovavel" in low and not nao
     labels_url = f"https://api.github.com/repos/{repo}/issues/{pr_number}/labels"
-    if nao:
-        api_request("POST", labels_url, token, [label])
-    elif aprovavel:
+    verdict = parse_report_verdict(report_text)
+    if verdict == "aprovavel":
         del_url = (
             f"https://api.github.com/repos/{repo}/issues/{pr_number}/labels/"
             f"{urllib.parse.quote(label)}"
@@ -144,3 +166,5 @@ def sync_block_label(repo: str, pr_number: int, report_text: str, block_label: s
             api_request("DELETE", del_url, token)
         except RuntimeError:
             pass
+        return
+    api_request("POST", labels_url, token, [label])
