@@ -16,6 +16,7 @@ from validator_api.github import (
     resolve_token,
     sync_block_label,
     upsert_review_comment,
+    upsert_validation_started_comment,
 )
 from validator_api.state import get_validated_sha, load_state, mark_validated
 
@@ -109,6 +110,18 @@ def run_validation(cfg: PrReviewConfig, pr_number: int, *, force: bool = False) 
         return 0
 
     print(f"PR #{pr_number}: validando ({reason}) @ {sha[:12]}…")
+
+    _phase("comentario de inicio na PR", pr_number)
+    try:
+        upsert_validation_started_comment(
+            repo,
+            pr_number,
+            token,
+            sha=sha,
+            pr_html_url=pr.get("html_url") or "",
+        )
+    except RuntimeError as e:
+        print(f"PR #{pr_number}: aviso — comentario de inicio falhou: {e}", flush=True)
 
     _phase("checkout", pr_number)
     _checkout_pr(cfg.app_dir, repo, pr_number, token)

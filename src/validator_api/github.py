@@ -14,6 +14,7 @@ from typing import Any
 
 API_VERSION = "2022-11-28"
 REVIEW_MARKER = "<!-- review -->"
+RUN_MARKER = "<!-- api-validator-run -->"
 
 
 def _new_comment_each_run() -> bool:
@@ -73,6 +74,37 @@ def api_request(method: str, url: str, token: str, data: dict | None = None) -> 
 def fetch_pr(repo: str, pr_number: int, token: str) -> dict[str, Any]:
     url = f"https://api.github.com/repos/{repo}/pulls/{pr_number}"
     return api_request("GET", url, token)
+
+
+def upsert_validation_started_comment(
+    repo: str,
+    pr_number: int,
+    token: str,
+    *,
+    sha: str = "",
+    pr_html_url: str = "",
+) -> None:
+    """Comentario na PR quando a validacao comeca (upsert pelo RUN_MARKER)."""
+    short = (sha or "?")[:12]
+    if sha:
+        commit_ref = f"[`{short}`](https://github.com/{repo}/commit/{sha})"
+    else:
+        commit_ref = f"`{short}`"
+    extra = f" — [abrir PR]({pr_html_url})" if pr_html_url else ""
+    body = (
+        f"{RUN_MARKER}\n"
+        f"Validação iniciada para o commit {commit_ref}{extra}.\n\n"
+        f"O relatório será publicado nesta PR ao concluir."
+    )
+    issue_url = f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments"
+    comments = api_request("GET", issue_url, token) or []
+    for c in comments:
+        if RUN_MARKER in (c.get("body") or ""):
+            cid = c["id"]
+            patch_url = f"https://api.github.com/repos/{repo}/issues/comments/{cid}"
+            api_request("PATCH", patch_url, token, {"body": body})
+            return
+    api_request("POST", issue_url, token, {"body": body})
 
 
 def upsert_review_comment(repo: str, pr_number: int, body: str, token: str) -> None:
