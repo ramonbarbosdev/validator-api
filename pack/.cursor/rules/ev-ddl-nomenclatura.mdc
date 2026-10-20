@@ -1,0 +1,38 @@
+---
+description: Nomenclatura DDL e aderência literal à SPEC (id_/nm_ tudojunto)
+globs: src/main/resources/db/migration/**,src/main/java/**/model/**,src/main/java/**/config/ConstraintMessageMap.java
+alwaysApply: false
+---
+
+# EV-DDL-001 — Nomenclatura e SPEC literal (IMPORTANTE)
+
+**Severidade no relatório:** Importante (comportamento ou contrato da tarefa incorreto).
+
+## Quando aplicar
+
+- A SPEC da tarefa ou `docs/SPEC.md` lista nomes de **tabela/coluna/constraint** como obrigatórios ou “literais”.
+- O diff altera `db/migration`, entity JPA ou `ConstraintMessageMap` no escopo.
+
+## Achado
+
+Publicar se **qualquer** divergência comprovada entre SPEC e diff:
+
+- Coluna na SQL ≠ `@Column(name = "...")`.
+- Identificador na SPEC ≠ migration (inclui underscores a mais: `id_entidade_superior` vs `id_entidadesuperior`).
+- `ConstraintMessageMap` sem entrada para `uk_*` / `ck_*` citados na SPEC quando a API deve traduzir violação.
+
+## Não é achado
+
+- Diff alinhado à SPEC mas diferente de tabela legada no repo (`id_entidade_subcategoria`).
+- CHECK ausente na SQL quando a SPEC **não** exige CHECK e a API valida (padrão repo).
+- Sugerir renomear para “padrão antigo” sem SPEC mandando literal.
+
+## Evidência obrigatória
+
+- Trecho da SPEC (ou comando) com o nome esperado.
+- Trecho do diff (SQL ou Java) com o nome encontrado.
+- Impacto: migration/entity não bate com combinado; front ou integração quebra contrato documentado.
+
+## Referência
+
+`docs/padrao/nomenclatura-portugues.md`, `docs/padrao/nomenclatura-colunas-sql.md`, `docs/validador/processo/inteligente.md`.

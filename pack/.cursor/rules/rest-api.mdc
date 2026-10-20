@@ -1,0 +1,27 @@
+---
+description: REST, DTOs e respostas (API Validator EV-REST-* / EV-DTO-*)
+globs: src/main/java/**/controller/**/*.java
+alwaysApply: false
+---
+
+# REST e DTOs
+
+Context `/api`. URLs kebab-case. Sucesso: `ApiResponseDTO` ou DTO direto — **alinhar ao vizinho do domínio**.
+
+Listagem paginada: `Pageable` + `@PageableDefault` + headers `X-Total-Count`, `X-Page`, `X-Page-Size`, `X-Total-Pages`. Todo `listar` novo: filtro + página — `docs/padrao/listagem-paginada-filtrada.md` (`EV-LST-*`).
+
+Filtros: record + `@ParameterObject` + `Filter*` + `GenericSpecificationBuilder`.
+
+| Código | Severidade | Regra |
+|--------|------------|--------|
+| **EV-REST-001** | CRÍTICO | `@RequestMapping` alinhado à permissão dinâmica (1º segmento). |
+| **EV-REST-002** | IMPORTANTE | `@Valid` em body de escrita com constraints. |
+| **EV-REST-003** | IMPORTANTE | Com `Pageable`, enviar os 4 headers de paginação. |
+| **EV-REST-004** | IMPORTANTE | Contrato HTTP alinhado ao módulo (envelope/headers). |
+| **EV-REST-005** | MELHORIA | Filtros de listagem com `@ParameterObject` (quando o módulo vizinho usa). **Swagger/OpenAPI (`@Tag`, `@Operation`, etc.) não é avaliado pelo API Validator.** |
+| **EV-REST-006** | IMPORTANTE | **Colisão de rota:** path fixo usado pela feature (SPEC ou controller do escopo) não pode ser atendido apenas por `/{id}` (ou variável equivalente) em controller com prefixo ancestral, sem handler explícito para aquele método+path. Procedimento: `docs/validador/processo/escopo-e-rest.md`. |
+| **EV-REST-007** | IMPORTANTE | Com **escopo ampliado** ativo: cada método+path listado na SPEC deve existir no código; ausência ou path alternativo que quebra o cliente é achado. |
+| **EV-DTO-001** | IMPORTANTE | DTOs em `dto.*`; não expor entity no controller. |
+| **EV-DTO-002** | MELHORIA | Records; JSON camelCase. |
+
+Ref: `EntidadeController`, `ContaPagarController`, `docs/padrao/controllers.md`, `docs/padrao/dtos.md`.

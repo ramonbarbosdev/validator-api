@@ -1,0 +1,25 @@
+---
+description: Testes (API Validator EV-TST-*)
+globs: src/test/**/*.java
+alwaysApply: false
+---
+
+# Testes
+
+**API Validator:** não reportar ausência de teste novo. `EV-TST-*` só vira achado se um teste do escopo falha, ou se o escopo exige o cenário e o diff altera o comportamento sem essa proteção. Precedência e veredito: `.cursor/agents/api-validator.md`.
+
+- Controller: `@WebMvcTest`, `MockMvc`, `@MockitoBean`, filtros desligados se necessário.
+- Service: `MockitoExtension`, `@InjectMocks`.
+- Rota: `DynamicRoutePermissionFilterTest`.
+- SQL: `*SeedTest` lendo migration do classpath.
+
+| Código | Severidade | Regra |
+|--------|------------|--------|
+| **EV-TST-001** | IMPORTANTE | Novo controller: `@WebMvcTest` (status, JSON, headers). |
+| **EV-TST-002** | IMPORTANTE | Rota nova: teste no filtro de permissão. |
+| **EV-TST-003** | IMPORTANTE | Service com regra: teste unitário. |
+| **EV-TST-004** | IMPORTANTE | Migration seed/permissão: teste de contrato SQL. |
+| **EV-TST-005** | MELHORIA | `@DisplayName` em português. |
+| **EV-TST-006** | MELHORIA | Não só `contextLoads` como prova da feature. |
+
+Ref: `CentralTipoDocumentoFinanceiroControllerTest`, `DynamicRoutePermissionFilterTest`.

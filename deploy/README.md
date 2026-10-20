@@ -21,6 +21,8 @@
 7. Caddy/nginx com TLS apontando para `localhost:8765` (ver `Caddyfile`).
 8. GitHub webhook: `https://validador.example.com/webhook`, evento **Pull requests**.
 
+**Dev local com webhook (sem ngrok):** PC + VPS na mesma tailnet — [`docs/local-tailscale.md`](../docs/local-tailscale.md) e `Caddyfile.tailscale-dev`.
+
 ## Logs
 
 ```bash

@@ -1,0 +1,20 @@
+---
+description: Tenant context e isolamento (API Validator EV-MTN-*)
+globs: src/main/java/**/*.java
+alwaysApply: false
+---
+
+# Multi-tenant
+
+`TenantContextService`, `TenantRuntimeContext`, `TenantEntity`, routing por `databaseName`.
+
+| Código | Severidade | Regra |
+|--------|------------|--------|
+| **EV-MTN-001** | CRÍTICO | CRUD/list tenant filtra por `idOrganizacao` do contexto. |
+| **EV-MTN-002** | CRÍTICO | `findById` em tenant valida organização. |
+| **EV-MTN-003** | CRÍTICO | Sem query tenant sem org quando JWT exige org. |
+| **EV-MTN-004** | IMPORTANTE | Ref. catálogo central no tenant: sem FK cross-DB; validar no service. |
+| **EV-MTN-005** | IMPORTANTE | TX tenant + central com `centralTransactionManager` explícito. |
+| **EV-MTN-006** | MELHORIA | Usar `TenantContextService`, não `SecurityContext` direto. |
+
+Ref: `BancoService`, `docs/tipo-documento-financeiro.md`.

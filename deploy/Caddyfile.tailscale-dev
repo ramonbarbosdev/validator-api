@@ -1,0 +1,16 @@
+# Dev: GitHub -> HTTPS na VPS -> validator-api no PC (Tailscale).
+# Prod (Docker) use Caddyfile ou Caddyfile.docker no mesmo arquivo com outro bloco server.
+
+{
+	email admin@example.com
+}
+
+# Producao (container na VPS) — quando existir
+validador.example.com {
+	reverse_proxy validator-api:8765
+}
+
+# Desenvolvimento: upstream = MagicDNS ou IP Tailscale do Windows (tailscale ip -4)
+validador-dev.example.com {
+	reverse_proxy 100.64.0.1:8765
+}

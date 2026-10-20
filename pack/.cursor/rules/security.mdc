@@ -1,0 +1,28 @@
+---
+description: JWT, permissões e autorização (API Validator EV-SEC-*)
+globs: src/main/java/**/*.java
+alwaysApply: false
+---
+
+# Segurança
+
+**Referência canônica de permissões e migrations central:** `docs/migrations-permissoes.md` (template: `docs/templates/permissoes_modulo.sql`). Checklist e convenções de `nm_chave`, `id_modulo` raiz e pastas prevalecem sobre exemplos SQL antigos.
+
+`DynamicRoutePermissionFilter`: 1º segmento da URL + HTTP → `{modulo}.ler|criar|editar|deletar`.
+
+Ignoradas: `auth`, `admin`, `app`, `permissoes`, `papeis`, `users`, `swagger-ui`, `v3`, `h2-console`, `error`, `/public/**`.
+
+`/admin/**` → `GLOBAL_SUPER_ADMIN`. Com org: `TENANT_ACCESS` + permissão fina. `@RequerModulo` + `@PreAuthorize` onde aplicável.
+
+| Código | Severidade | Regra |
+|--------|------------|--------|
+| **EV-SEC-001** | CRÍTICO | Endpoint não ignorado: `permissao_global.nm_chave` com prefixo = 1º segmento da rota. |
+| **EV-SEC-002** | CRÍTICO | URL e chave alinhadas (ex. `/contratos` → `contratos.ler`). |
+| **EV-SEC-003** | CRÍTICO | Dados de org não só `authenticated()` sem filtro/`PreAuthorize`. |
+| **EV-SEC-004** | IMPORTANTE | `@RequerModulo` no módulo de produto, salvo exceção documentada. |
+| **EV-SEC-005** | IMPORTANTE | `/admin/**`: `@PreAuthorize` como controllers sistema. |
+| **EV-SEC-006** | IMPORTANTE | Migration: `permissao_global.id_modulo` = módulo **raiz**; `nm_modulo` = submódulo. |
+| **EV-SEC-007** | MELHORIA | Teste em `DynamicRoutePermissionFilterTest` para rotas novas. |
+| **EV-SEC-008** | IMPORTANTE | Migration de permissão segue checklist de `docs/migrations-permissoes.md` (pasta, ordem upsert, nomenclatura, idempotência). |
+
+Ref: `docs/migrations-permissoes.md`, `docs/templates/permissoes_modulo.sql`.

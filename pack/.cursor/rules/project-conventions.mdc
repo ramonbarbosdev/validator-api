@@ -1,0 +1,26 @@
+---
+description: Nomenclatura, reuso e convenções (API Validator EV-NOM-* / EV-REU-* / EV-ESP-*)
+globs: src/main/java/**/*.java,src/main/resources/db/**/*.sql,docs/**/*.md
+alwaysApply: false
+---
+
+# Convenções
+
+`com.esimples_api`; colunas `id_`, `nm_`, `cd_`, `fl_`, `dt_`; services centrais `Central*`. Permissões `{submodulo}.{acao}`. Docs em `docs/`. **Idioma:** português em negócio — `docs/padrao/nomenclatura-portugues.md`.
+
+Legado não é regra: envelope misto (`ContaPagarController`), SQL antigo V48 vs V33, colunas `status`/`database_name`. Preferir `docs/migrations-permissoes.md` e features recentes.
+
+| Código | Severidade | Regra |
+|--------|------------|--------|
+| **EV-NOM-001** | MELHORIA | URL kebab-case; permissão = segmento. |
+| **EV-NOM-002** | MELHORIA | Pacote/nome do domínio consistente. |
+| **EV-NOM-003** | IMPORTANTE | **Código novo no diff:** colunas SQL, campos entity/DTO/JSON e métodos de service/controller em **português** com prefixos do projeto (`id_`, `nm_`, `fl_`, `dt_`, …). Proibido termos genéricos em inglês (`name`, `active`, `description`, `createdAt`, `findByUser`, …) salvo exceção em `nomenclatura-portugues.md` ou SPEC literal. |
+| **EV-NOM-004** | IMPORTANTE | **Código novo:** classes `@Entity` de negócio com nome em português (`ContaPagar`, `Entidade`). Não criar models novos com substantivos de domínio em inglês (`Customer`, `Payment`). Legado (`AuditLog`, `TenantEntity`) não obriga renomear fora do escopo. |
+| **EV-REU-001** | IMPORTANTE | Reusar `shared`, specs, mappers existentes. |
+| **EV-REU-002** | MELHORIA | Padrão CRUD do módulo vizinho. |
+| **EV-ESP-001** | IMPORTANTE | `docs/*.md` da feature consistente com código. |
+| **EV-ESP-002** | IMPORTANTE | `AGENTS.md`: não inventar pacote sem analisar repo. |
+| **EV-ESP-003** | IMPORTANTE | Validação de banco: confrontar migration/entity com `docs/arquitetura-banco-atual.md` e SQL do repo; doc desatualizada ≠ achado — só violação real de estrutura/tenant. |
+| **EV-ESP-004** | IMPORTANTE | Validação de permissões: confrontar com `docs/migrations-permissoes.md`. |
+
+Ref: `AGENTS.md`, `docs/padrao/nomenclatura-portugues.md`, `docs/padrao/nomenclatura-colunas-sql.md`, `docs/arquitetura-banco-atual.md`, `docs/migrations-permissoes.md`, `GenericSpecificationBuilder`.

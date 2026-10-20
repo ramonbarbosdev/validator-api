@@ -1,0 +1,20 @@
+---
+description: Persistir no repositório padrões definidos pelo usuário no chat (validador e API)
+alwaysApply: true
+---
+
+# Padrões definidos no chat
+
+Quando o usuário solicitar uma **regra ou padrão válido para todo o esimples-api** (REST, validação, migrations, validador, multi-tenant, etc.):
+
+1. **Aplicar** na tarefa em andamento.
+2. **Persistir** para não depender de repetir no chat:
+   - Padrões reutilizáveis → `docs/padrao/` + `docs/padrao/README.md` no **projeto alvo**
+   - Validador → `docs/validador/` (ou atualizar pacote [cursor-api-validator-java](https://github.com/SUA_ORG/cursor-api-validator-java))
+   - Checklist → `docs/validador/processo/review-checklist-api.md`
+   - Regra `EV-*` → `.cursor/rules/*.mdc` (severidade CRÍTICO ou IMPORTANTE)
+   - Fluxo do agente → `.cursor/agents/api-validator.md`, `.cursor/skills/revisao-api/SKILL.md`
+   - Template de tarefa → `docs/SPEC.template.md`
+3. **Informar** em uma linha onde foi gravado.
+
+Não gravar preferência pontual de uma tela só, a menos que o usuário diga que vale para o projeto inteiro.

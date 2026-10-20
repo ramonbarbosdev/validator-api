@@ -1,0 +1,31 @@
+---
+description: JPA, transações e Flyway (API Validator EV-PER-* / EV-TXN-* / EV-PRF-*)
+globs: src/main/java/**/*.java,src/main/resources/db/**/*.sql
+alwaysApply: false
+---
+
+# Persistência
+
+**Referência canônica de banco (tenant, schemas, tabelas, relacionamentos):** `docs/arquitetura-banco-atual.md`. Em conflito com código legado, validar contra esse documento e as migrations.
+
+- Tenant: `repository.*`, `@Transactional` no service.
+- Central: `repository.central.*`, `transactionManager = "centralTransactionManager"`.
+- Flyway: `db/central` → `esimples_central`; `db/migration` → tenant.
+- Permissões só em central. Não editar migration já aplicada.
+- **Dados e integridade primeiro:** migration no escopo não pode quebrar subida da app nem invalidar dados existentes sem plano (backfill, default, etapas). Ver `docs/padrao/banco.md` (Prioridade: dados).
+
+| Código | Severidade | Regra |
+|--------|------------|--------|
+| **EV-PER-001** | CRÍTICO | Schema/permissão central em `db/central`. |
+| **EV-PER-002** | CRÍTICO | Negócio tenant em `db/migration`. |
+| **EV-PER-003** | IMPORTANTE | Permissões: upsert módulo + `permissao_global` + `ON CONFLICT`. |
+| **EV-PER-004** | IMPORTANTE | `V{N}__descricao.sql`; correção = nova migration. |
+| **EV-PER-005** | IMPORTANTE | DDL/FK/índices tenant coerentes com padrões do projeto (schemas, `id_organizacao` quando aplicável); usar `docs/arquitetura-banco-atual.md` e migrations existentes como referência de validação — não exigir atualizar a doc. |
+| **EV-PER-006** | CRÍTICO | Migration no diff: SQL não pode impedir startup (Flyway/Hibernate) nem corromper integridade de dados existentes; evitar DDL bloqueante sem backfill/default; preferir expand-first (`docs/padrao/banco.md`). |
+| **EV-TXN-001** | IMPORTANTE | Escrita `@Transactional`; leitura `readOnly = true`. |
+| **EV-TXN-002** | CRÍTICO | Repo central → `centralTransactionManager`. |
+| **EV-TXN-003** | MELHORIA | Sem `@Transactional` no controller. |
+| **EV-PRF-001** | IMPORTANTE | Listagens tenant com filtro org; evitar `findAll` sem limite em tabelas grandes. |
+| **EV-PRF-002** | MELHORIA | Evitar N+1 em listas. |
+
+Ref: `docs/arquitetura-banco-atual.md`, `CentralTipoDocumentoFinanceiroService`, `BancoService`.

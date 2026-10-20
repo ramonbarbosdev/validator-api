@@ -1,0 +1,85 @@
+﻿{
+  "version": 2,
+  "description": "Estado acordado Padrão C (listagem paginada). Ver docs/padrao/colecao-filha-vinculada-pai.md.",
+  "updated": "2026-10-19",
+  "enums": {
+    "listagem_c": ["ok", "violation", "review", "unknown", "n/a"]
+  },
+  "piloto": {
+    "module": "financeiro/ContaReceberService",
+    "goal": {
+      "listagem_c": "ok",
+      "mestre": "GET /conta-receber/{id} - totais agregados; recebimentos[] vazio",
+      "detalhe_aba": "GET /conta-receber/{id}/recebimentos",
+      "escrita": "POST/PUT com recebimentos[] no body"
+    },
+    "reference_doc": "docs/padrao/mestre-detalhe-conta-receber.md",
+    "mirror": "financeiro/ContaPagarService"
+  },
+  "modules": {
+    "financeiro/ContaReceberService": {
+      "listagem_c": "ok",
+      "detalhe": "toResponseListagem na listagem; GET /{id} com totais e recebimentos[] vazio; GET /{id}/recebimentos na aba"
+    },
+    "financeiro/ContaPagarService": {
+      "listagem_c": "ok",
+      "detalhe": "toResponseListagem na listagem; GET /{id} com totais e pagamentos[] vazio; GET /{id}/pagamentos na aba"
+    },
+    "financeiro/LancamentoFinanceiroService": {
+      "listagem_c": "ok",
+      "detalhe": "sem colecoes na lista; possivel N+1 idEstorno por linha (performance)"
+    },
+    "financeiro/ExtratoFinanceiroService": {
+      "listagem_c": "ok",
+      "detalhe": "consulta paginada de movimentos; nao e CRUD mestre-detalhe"
+    },
+    "financeiro/CategoriaFinanceiraService": { "listagem_c": "ok" },
+    "financeiro/SubCategoriaFinanceiraService": { "listagem_c": "ok" },
+    "financeiro/ContaBancariaService": { "listagem_c": "ok" },
+    "contrato/ContratoService": {
+      "listagem_c": "ok",
+      "detalhe": "toResponseListagem na listagem e no export; aditivos da pagina em lote so para status e vigencia efetiva; GET /{id} com itens e aditivos; abas em GET /{id}/itens e /{id}/aditivos"
+    },
+    "contrato/BoletimMedicaoService": {
+      "listagem_c": "ok",
+      "detalhe": "toResponseListagem na listagem; GET /{id} mantem itens[] e destinatarios; GET /{id}/itens na aba"
+    },
+    "contrato/ModalidadeService": {
+      "listagem_c": "review",
+      "detalhe": "basesLegais[] resumo na listagem"
+    },
+    "contrato/BaseLegalService": { "listagem_c": "ok" },
+    "cadastros/EntidadeService": {
+      "listagem_c": "violation",
+      "detalhe": "enderecos, contatos, cnaes, dadosBancarios na listagem"
+    },
+    "cadastros/ColaboradorService": {
+      "listagem_c": "violation",
+      "detalhe": "modulos, contatos, enderecos na listagem"
+    },
+    "cadastros/CatalogoService": {
+      "listagem_c": "review",
+      "detalhe": "objeto fiscal 1:1 na listagem"
+    },
+    "cadastros/GrupoService": { "listagem_c": "ok" },
+    "cadastros/BancoService": { "listagem_c": "ok" },
+    "cadastros/AgenciaService": { "listagem_c": "ok" },
+    "cadastros/CargosService": { "listagem_c": "ok" },
+    "cadastros/CidadeService": { "listagem_c": "ok" },
+    "cadastros/SiglaService": { "listagem_c": "ok" },
+    "cadastros/TipoEntidadeService": { "listagem_c": "ok" },
+    "cadastros/UnidadeMedidaService": { "listagem_c": "ok" },
+    "cadastros/PrecoBaseService": { "listagem_c": "ok" },
+    "admin/CentralSolicitacaoAdminService": {
+      "listagem_c": "ok",
+      "detalhe": "CentralSolicitacaoResumoResponse na listagem"
+    },
+    "admin/CentralTipoDocumentoFinanceiroService": { "listagem_c": "ok" },
+    "admin/CentralUsuarioSegurancaAdminService": { "listagem_c": "ok" },
+    "admin/CentralCnaeService": {
+      "listagem_c": "ok",
+      "detalhe": "historico de importacao paginado"
+    },
+    "sistema/LogAtividadeService": { "listagem_c": "ok" }
+  }
+}

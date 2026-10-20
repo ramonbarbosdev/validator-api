@@ -1,0 +1,25 @@
+---
+description: Camadas e separação tenant/central (API Validator EV-ARC-*)
+globs: src/main/java/**/*.java
+alwaysApply: false
+---
+
+# Arquitetura
+
+| Camada | Tenant | Central |
+|--------|--------|---------|
+| Controller | `controller.*` | `controller.sistema.*`, `/admin/**` |
+| Service | `*Service` + `TenantContextService` | `Central*Service` |
+| Repository | `repository.*` | `repository.central.*` |
+| Model | `model.*` | `tenant.central.model.*` |
+
+| Código | Severidade | Regra |
+|--------|------------|--------|
+| **EV-ARC-001** | CRÍTICO | Tenant não via `repository.central` / `centralTransactionManager`, exceto catálogo/auth documentado. |
+| **EV-ARC-002** | CRÍTICO | Catálogo/permissões centrais não só no EM tenant. |
+| **EV-ARC-003** | IMPORTANTE | Controller fino; negócio no service. Detalhe: `docs/padrao/controllers.md`, `EV-CTL-*`. |
+| **EV-ARC-004** | IMPORTANTE | Mapper `@Component`; sem mapeamento pesado no controller. |
+| **EV-ARC-005** | IMPORTANTE | Pacotes `dto.{dominio}`, `mapper`, `repository` alinhados ao domínio. |
+| **EV-ARC-006** | MELHORIA | `@AllArgsConstructor` ou construtor explícito. |
+
+Ref: `JpaRepositoriesConfig`, `CentralJpaConfig`, `TenantConnectionManager`, `docs/padrao/controllers.md`, `docs/padrao/services.md`, `ev-controllers.mdc`, `ev-services.mdc`.

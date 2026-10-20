@@ -1,0 +1,19 @@
+---
+description: Listagens com filtro e paginação (API Validator EV-LST-*)
+globs: src/main/java/**/controller/**/*.java,src/main/java/**/service/**/*.java,src/main/java/**/dto/**/*Filter*.java
+alwaysApply: false
+---
+
+# Listagem paginada e filtrada (EV-LST)
+
+Norma: `docs/padrao/listagem-paginada-filtrada.md`. Headers: `EV-REST-003`. Filtro: `EV-REST-005`.
+
+| Código | Severidade | Regra |
+|--------|------------|--------|
+| **EV-LST-001** | IMPORTANTE | No **diff**, novo endpoint ou método **`listar`** (ou GET de coleção equivalente) que retorna coleção de DTOs **sem** `Pageable` e sem os 4 headers de paginação no controller → reportar: adotar `Page<XxxResponse>`, `XxxFilter` e padrão de `EntidadeController`/`BancoController`, salvo exceção na SPEC (combo, catálogo fixo, volume limitado sob `{id}`). |
+| **EV-LST-002** | IMPORTANTE | No **diff**, novo `listar` **sem** `*Filter` (ou sem parâmetros de filtro) em módulo cujo vizinho já expõe `XxxFilter` → reportar inclusão de filtro alinhado (`pesquisa`, flags, FK). |
+| **EV-LST-003** | MELHORIA | `listar` no service retornando `List<>` em cadastro tenant paginável no vizinho → sugerir `Page<>` na revisão (não bloquear legado fora do diff). |
+
+Não exigir paginação em export (`Pageable.unpaged`), nem refactor de listagens legadas não tocadas pelo escopo.
+
+Ref: `EntidadeService.listar`, `BancoController.listar`, `docs/padrao/listagem-paginada-filtrada.md`.

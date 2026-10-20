@@ -6,7 +6,7 @@ import shutil
 import sys
 from pathlib import Path
 
-from validator_api.config import PrReviewConfig, default_env_file, load_env_file
+from validator_api.config import PrReviewConfig, bundled_pack_root, default_env_file, load_env_file
 from validator_api.github import resolve_token
 
 
@@ -43,6 +43,9 @@ def run_doctor() -> int:
         issues.append(f"Pacote validador nao encontrado: {cfg.validator_root}")
     else:
         ok_notes.append(f"validator pack: {cfg.validator_root}")
+    bundled = bundled_pack_root()
+    if bundled.is_dir() and bundled.resolve() == cfg.validator_root.resolve():
+        ok_notes.append("usando pack/ embutido no validator-api")
 
     ci = cfg.validator_root / "scripts" / "ci-api-validator.py"
     if not ci.is_file():

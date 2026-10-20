@@ -1,0 +1,55 @@
+# Copie para esimples-api: .github/workflows/api-validator-pr.yml
+# Ajuste base branch e URL do pacote validador.
+#
+# Este job PREPARA o contexto da PR. Para publicar relatório automático,
+# adicione um passo com Cursor SDK/Cloud Agent e secret CURSOR_API_KEY.
+
+name: api-validator (prepare)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [develop]
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout API
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout validador
+        uses: actions/checkout@v4
+        with:
+          repository: SUA_ORG/cursor-api-validator-java
+          path: cursor-api-validator-java
+
+      - name: Install pacote + stack e-Simples
+        run: |
+          bash cursor-api-validator-java/install/install.sh "$(pwd)" java-spring-esimples
+
+      - name: Diff vs base
+        run: |
+          git fetch origin ${{ github.base_ref }}
+          git diff --stat "origin/${{ github.base_ref }}...HEAD" | tee diff-stat.txt
+          git diff "origin/${{ github.base_ref }}...HEAD" > pr-diff.patch
+
+      - name: Gerar prompt (artefato)
+        run: |
+          mkdir -p .api-validator-review
+          cat > .api-validator-review/prompt.md <<'PROMPT'
+          /api-validator PR #${{ github.event.pull_request.number }} — diff vs origin/${{ github.base_ref }}.
+          SPEC: docs/SPEC.md na branch se existir; escopo ampliado se Contrato HTTP na SPEC.
+          Seguir .cursor/agents/api-validator.md — somente relatório.
+          PROMPT
+
+      - name: Upload contexto
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-validator-pr-${{ github.event.pull_request.number }}
+          path: |
+            .api-validator-review/
+            diff-stat.txt
+            pr-diff.patch

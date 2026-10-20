@@ -1,0 +1,21 @@
+---
+description: Controller fino — sem negócio, delegação ao service (API Validator EV-CTL-*)
+globs: src/main/java/**/controller/**/*.java
+alwaysApply: false
+---
+
+# Controllers (EV-CTL)
+
+Norma: `docs/padrao/controllers.md`. Complementa `EV-ARC-003` (`.cursor/rules/architecture.mdc`).
+
+| Código | Severidade | Regra |
+|--------|------------|--------|
+| **EV-CTL-001** | IMPORTANTE | **Toda regra de negócio** no diff passa pelo `*Service`; controller só HTTP (`ResponseEntity`, headers, `@Valid`). Validação que depende de dados persistidos, tenant, duplicidade, transição de estado ou invariante de domínio **não** fica no controller. |
+| **EV-CTL-002** | IMPORTANTE | Controller **não** injeta `*Repository`, `EntityManager` nem `JdbcTemplate` (código novo no diff). |
+| **EV-CTL-003** | IMPORTANTE | Controller **não** lança `BusinessException` / `ConflictException` / `ResourceNotFoundException` por regra de domínio no diff novo — usar service. |
+| **EV-CTL-004** | IMPORTANTE | Sem `@Transactional` no controller (`EV-TXN-003`). |
+| **EV-CTL-005** | MELHORIA | Sem mapeamento entity↔DTO pesado no controller; usar `*Mapper` no service (`EV-ARC-004`). |
+
+Legado com negócio no controller não obriga refactor fora do escopo; **não** introduzir o mesmo padrão em endpoints novos.
+
+Ref: `EntidadeController`, `BancoController`, `docs/padrao/controllers.md`.

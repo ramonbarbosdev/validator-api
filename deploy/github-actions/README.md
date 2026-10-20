@@ -1,70 +1,40 @@
 # GitHub Actions + Docker — somente produção
 
-Fluxo:
+Fluxo: `git push main` → GHCR → SSH → `docker run`.
 
-```text
-git push main (ou workflow_dispatch) → build → GHCR → SSH VPS → docker run
-```
+O **pacote validador** (`pack/`) vai **dentro da imagem** — não clone `cursor-api-validator-java` na VPS.
 
-Workflow: [`.github/workflows/docker.yml`](../../.github/workflows/docker.yml).
-
-**Não há homolog** — apenas branch `main` e environment GitHub **`prod`**.
-
-## Produção na VPS
+## VPS
 
 | Item | Valor |
 |------|--------|
 | Container | `validator-api` |
-| Porta host | **8765** → 8765 no container |
-| Env no servidor | `/home/app/validator-api.env` |
-| Clone API (checkout PR) | `/home/app/esimples-api` |
-| Pacote validador | `/home/app/cursor-api-validator-java` |
-| Rede Docker | `network-esimples` |
-
-## Secrets (mesmos do esimples-api)
-
-| Secret | Descrição |
-|--------|-----------|
-| `SERVER_HOST` | VPS |
-| `SERVER_USER` | SSH |
-| `SERVER_SSH_KEY` | chave privada |
-| `SERVER_PORT` | SSH |
-
-Configure o environment **`prod`** no repositório validator-api (opcional: aprovação manual).
-
-## Preparar VPS (uma vez)
+| Porta | **8765** |
+| Env | `/home/app/validator-api.env` |
+| Volume | `/home/app/app-repo` → `/data/app` (clone **git** do repo da API) |
 
 ```bash
-sudo mkdir -p /home/app
-sudo git clone https://github.com/gpi-organizacao/esimples-api.git /home/app/esimples-api
-sudo git clone https://github.com/gpi-organizacao/cursor-api-validator-java.git /home/app/cursor-api-validator-java
+sudo git clone https://github.com/gpi-organizacao/esimples-api.git /home/app/app-repo
+# ou qualquer outra API Java com pom.xml
 ```
 
-`/home/app/validator-api.env` (paths **dentro** do container):
+`/home/app/validator-api.env`:
 
 ```env
 GITHUB_REPOSITORY=gpi-organizacao/esimples-api
-REPO_ROOT=/data/esimples-api
-CURSOR_API_VALIDATOR_ROOT=/data/cursor-api-validator-java
+REPO_ROOT=/data/app
 GITHUB_WEBHOOK_SECRET=...
 RUNNER_API_TOKEN=...
 CURSOR_API_KEY=...
 GITHUB_TOKEN=...
 GITHUB_BASE_REF=develop
+# API_VALIDATOR_STACK=java-spring-esimples
 ```
 
-Webhook GitHub: `https://seu-dominio/webhook` → proxy para `localhost:8765`.
+Secrets: `SERVER_HOST`, `SERVER_USER`, `SERVER_SSH_KEY`, `SERVER_PORT`.
 
-Imagem: `ghcr.io/gpi-organizacao/validator-api:prod-<sha>` e tag `prod-latest`.
+## Instalar regras no repo da API (dev)
 
-## Build local
-
-```bash
-docker build -t validator-api:local .
-docker run --rm -p 8765:8765 --env-file .env \
-  -v /path/esimples-api:/data/esimples-api \
-  -v /path/cursor-api-validator-java:/data/cursor-api-validator-java:ro \
-  -e REPO_ROOT=/data/esimples-api \
-  -e CURSOR_API_VALIDATOR_ROOT=/data/cursor-api-validator-java \
-  validator-api:local
+```powershell
+.\pack\install\install.ps1 -Target C:\path\sua-api -Stack java-spring-esimples
 ```

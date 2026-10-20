@@ -1,0 +1,21 @@
+---
+description: Validação e exceções (API Validator EV-VAL-* / EV-EXC-*)
+globs: src/main/java/**/*.java
+alwaysApply: false
+---
+
+# Validação e exceções
+
+Bean Validation nos requests; `@Valid` no controller. Negócio: `BusinessException`, `ResourceNotFoundException`, `ConflictException`. Erros: `GlobalExceptionHandler` → `ApiErrorResponse`.
+
+| Código | Severidade | Regra |
+|--------|------------|--------|
+| **EV-VAL-001** | IMPORTANTE | Obrigatórios no DTO ou validação no service. |
+| **EV-VAL-002** | IMPORTANTE | Regra de negócio no service. |
+| **EV-VAL-003** | MELHORIA | Mensagens em português. |
+| **EV-EXC-001** | IMPORTANTE | Não engolir exceção no controller. |
+| **EV-EXC-002** | IMPORTANTE | Exceções do pacote `exception`. |
+| **EV-EXC-003** | MELHORIA | `StructuredAccessDeniedException` quando 403 estruturado no handler. |
+| **EV-VAL-004** | IMPORTANTE | Validação por lista fechada (enum/domínio) no `validar()` ou service: se o aceite da SPEC ou o fluxo inclui **editar registros já persistidos**, o diff deve normalizar/migrar formato legado ou documentar na SPEC que legado fica inválido até correção manual; caso contrário, entrada com valor antigo → rejeição inesperada na edição. |
+
+Ref: `GlobalExceptionHandler`, `ContaPagarRequest`, `CatalogoRequest.validar()`.

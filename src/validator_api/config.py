@@ -10,6 +10,24 @@ def _env(name: str, default: str = "") -> str:
     return os.environ.get(name, default).strip()
 
 
+def bundled_pack_root() -> Path:
+    """Pacote Cursor em validator-api/pack (repo ou imagem Docker)."""
+    return Path(__file__).resolve().parents[2] / "pack"
+
+
+def resolve_validator_root(app_dir: Path) -> Path:
+    vroot = _env("CURSOR_API_VALIDATOR_ROOT") or _env("VALIDATOR_ROOT")
+    if vroot:
+        return Path(vroot).resolve()
+    bundled = bundled_pack_root()
+    if (bundled / "install" / "install.sh").is_file():
+        return bundled.resolve()
+    sibling = app_dir.parent / "cursor-api-validator-java"
+    if sibling.is_dir():
+        return sibling.resolve()
+    return (app_dir / "cursor-api-validator-java").resolve()
+
+
 def default_env_file() -> Path:
     override = _env("VALIDATOR_API_ENV_FILE")
     if override:
@@ -55,12 +73,7 @@ class PrReviewConfig:
         if not (app / "pom.xml").is_file() and _env("APP_DIR"):
             app = Path(_env("APP_DIR")).resolve()
 
-        vroot = _env("CURSOR_API_VALIDATOR_ROOT") or _env("VALIDATOR_ROOT")
-        if vroot:
-            validator = Path(vroot).resolve()
-        else:
-            sibling = app.parent / "cursor-api-validator-java"
-            validator = sibling.resolve() if sibling.is_dir() else app / "cursor-api-validator-java"
+        validator = resolve_validator_root(app)
 
         repo = _env("GITHUB_REPOSITORY")
         state = app / ".api-validator-review" / "automation-state.json"

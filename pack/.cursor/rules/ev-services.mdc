@@ -1,0 +1,19 @@
+---
+description: Padrão de services — JavaDoc, repository, sem comentário inline (API Validator EV-SVC-*)
+globs: src/main/java/**/service/**/*.java
+alwaysApply: false
+---
+
+# Services (EV-SVC)
+
+Norma completa: `docs/padrao/services.md`. Transações e repos: `.cursor/rules/persistence.mdc`, `.cursor/rules/architecture.mdc`.
+
+| Código | Severidade | Regra |
+|--------|------------|--------|
+| **EV-SVC-001** | IMPORTANTE | Service de negócio **tenant** não injeta `EntityManager`, `JdbcTemplate` nem `NamedParameterJdbcTemplate`; leitura/escrita só via `repository.*` (ou service central documentado no escopo). Legado existente não obriga replicar no diff novo. |
+| **EV-SVC-002** | IMPORTANTE | Classe `*Service` **nova** ou métodos **públicos novos** no diff devem ter JavaDoc (`/** … */`); métodos públicos alterados de forma relevante devem atualizar o JavaDoc. |
+| **EV-SVC-003** | IMPORTANTE | Sem comentários `//` ou blocos `/* … */` no **corpo** de métodos (só JavaDoc imediatamente antes da declaração). |
+| **EV-SVC-004** | IMPORTANTE | Não introduzir no diff métodos `public`/`private` sem uso no projeto. |
+| **EV-SVC-005** | MELHORIA | `@author` e `@since` nos JavaDocs de métodos públicos novos (convenção do projeto). |
+
+Ref: `BancoService`, `CatalogoService`, `AuthRefreshTokenService` (JavaDoc), `docs/padrao/services.md`.

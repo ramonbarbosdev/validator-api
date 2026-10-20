@@ -1,43 +1,40 @@
 # validator-api
 
-Serviço HTTP (webhook GitHub), fila e CLI para validar PRs com o pacote [cursor-api-validator-java](https://github.com/gpi-organizacao/cursor-api-validator-java).
+Serviço (webhook, fila, CLI) + **pacote Cursor** em [`pack/`](pack/) — regras, skill, `install`, agente CI.
 
-UI desktop (React + Electron): repositório **[validator-front](https://github.com/gpi-organizacao/validator-front)**.
+Funciona com **qualquer** API Java/Spring: configure `GITHUB_REPOSITORY` e `REPO_ROOT` (clone git para checkout de PR).
 
-## Pré-requisitos
+UI: [validator-front](https://github.com/gpi-organizacao/validator-front) (React).
 
-| Item | Uso |
-|------|-----|
-| Clone **esimples-api** | `REPO_ROOT` |
-| Clone **cursor-api-validator-java** | `CURSOR_API_VALIDATOR_ROOT` |
-| `CURSOR_API_KEY` | Agente Cursor (cloud) |
-| `GITHUB_TOKEN` | API GitHub, checkout, comentário na PR |
-| Python 3.10+ | Runner |
-| Git | Checkout (ou `gh`) |
-| WSL (Windows) | Agente cloud via `ci-api-validator-cloud-wsl.ps1` |
+## Estrutura
 
-## Instalação
+| Pasta | Conteúdo |
+|-------|----------|
+| `pack/` | Ex-`cursor-api-validator-java`: `.cursor/`, `docs/`, `install/`, `stacks/`, `scripts/ci-api-validator.py` |
+| `src/validator_api/` | Serviço HTTP e runner |
+
+`CURSOR_API_VALIDATOR_ROOT` **opcional** — padrão é `pack/` (ou `/app/pack` no Docker).
+
+## Dev local
+
+Guia local: **[docs/local-windows.md](docs/local-windows.md)** · webhook com URL fixa (Tailscale + VPS): **[docs/local-tailscale.md](docs/local-tailscale.md)**.
 
 ```powershell
 cd validator-api
 python -m venv .venv
 .\.venv\Scripts\activate
 pip install -e .
+pip install -r pack/scripts/requirements-ci.txt
 copy env.example .env
-# edite .env
+# REPO_ROOT = clone do repo da API (ex. esimples-api)
 validator-api doctor
-validator-api serve
+.\scripts\start-local.ps1
 ```
 
-Linux (VPS):
+Instalar regras no projeto da API:
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -e .
-cp env.example .env
-validator-api doctor
-validator-api serve
+```powershell
+.\pack\install\install.ps1 -Target C:\path\sua-api -Stack java-spring-esimples
 ```
 
 ## CLI
@@ -45,33 +42,13 @@ validator-api serve
 | Comando | Descrição |
 |---------|-----------|
 | `validator-api serve` | Webhook + worker |
-| `validator-api run --pr 123` | Valida uma PR |
-| `validator-api run --pr 123 --force` | Ignora SHA já validado |
+| `validator-api run --pr N` | Valida uma PR |
 | `validator-api doctor` | Checagens de ambiente |
-| `validator-api poll` | PRs com commit novo (dry-run, requer `gh`) |
-| `validator-api poll --run` | Executa validação |
 
-## API HTTP
+API: [docs/API.md](docs/API.md).
 
-Ver [docs/API.md](docs/API.md).
+## Deploy produção (Docker + GHCR)
 
-- `GET /health` — público
-- `GET /status` e `GET /api/v1/status` — fila (Bearer se `RUNNER_API_TOKEN`)
-- `POST /webhook` — GitHub (assinatura `GITHUB_WEBHOOK_SECRET`)
-- `POST /api/v1/validate` — `{"pr_number": 123, "force": false}`
+Push `main` → Actions → VPS. Pacote **já na imagem**; na VPS só volume do **repo da API** (`/home/app/app-repo` → `/data/app`).
 
-## Deploy na VPS (Docker + GHCR)
-
-**Somente produção:** push em `main` → imagem **ghcr.io** → SSH → `docker run` (`network-esimples`, porta **8765**).
-
-Guia: [`deploy/github-actions/README.md`](deploy/github-actions/README.md)
-
-Alternativa sem Docker: [`deploy/README.md`](deploy/README.md) (systemd).
-
-## ngrok (dev local)
-
-```bash
-ngrok http 8765
-```
-
-Payload URL: `https://....ngrok-free.app/webhook`
+[`deploy/github-actions/README.md`](deploy/github-actions/README.md)
