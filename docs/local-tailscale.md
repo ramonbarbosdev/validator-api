@@ -66,13 +66,45 @@ curl -sS "http://100.x.y.z:8765/health"
 
 Deve retornar `ok`.
 
-## 3. Caddy na VPS (subdomínio de dev)
+## 3. HTTPS na VPS (subdomínio de dev)
 
-Exemplo em [`deploy/Caddyfile.tailscale-dev`](../deploy/Caddyfile.tailscale-dev).
+DNS: `validador-dev.seudominio.com` → **IP público da VPS**.
 
-1. Troque `validador-dev.example.com` pelo seu DNS (A/AAAA → IP público da VPS).
-2. Troque o upstream pelo **IP Tailscale do PC** ou MagicDNS (`nome.tailnet.ts.net`).
-3. Recarregue Caddy (`systemctl reload caddy` ou como você já usa).
+Upstream = **IP Tailscale do PC** (`100.x.y.z:8765`) ou MagicDNS (`nome.tailnet.ts.net:8765`).
+
+### nginx
+
+Exemplo completo: [`deploy/nginx-validador-dev.conf.example`](../deploy/nginx-validador-dev.conf.example).
+
+Resumo:
+
+```nginx
+upstream validator_dev_pc {
+    server 100.79.228.111:8765;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name validador-dev.seudominio.com;
+    # ssl_certificate ... (certbot)
+
+    location / {
+        proxy_pass http://validator_dev_pc;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 300s;
+    }
+}
+```
+
+```bash
+sudo nginx -t && sudo systemctl reload nginx
+# primeiro TLS: sudo certbot --nginx -d validador-dev.seudominio.com
+```
+
+### Caddy (alternativa)
+
+[`deploy/Caddyfile.tailscale-dev`](../deploy/Caddyfile.tailscale-dev) — `reverse_proxy 100.x.y.z:8765`.
 
 Teste público:
 
