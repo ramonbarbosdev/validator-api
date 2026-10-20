@@ -282,7 +282,6 @@ def write_report(root: Path, pr_label: str, base: str, pr: str, body: str) -> Pa
     )
     return report_path
 
-
 def main() -> int:
     root = Path(os.environ.get("REPO_ROOT", ".")).resolve()
     load_env_file(root)
