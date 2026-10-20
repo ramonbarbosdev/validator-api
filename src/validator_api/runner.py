@@ -34,11 +34,16 @@ def _run(cmd: list[str], *, cwd: Path, env: dict[str, str] | None = None) -> Non
     subprocess.run(cmd, cwd=str(cwd), env=env, check=True)
 
 
+def _pr_head_branch(pr: dict[str, Any]) -> str:
+    return ((pr.get("head") or {}).get("ref") or "").strip()
+
+
 def _checkout_pr(
     app_dir: Path,
     repo: str,
     pr_number: int,
     token: str,
+    pr: dict[str, Any],
 ) -> None:
     if shutil.which("gh"):
         _run(
@@ -52,16 +57,16 @@ def _checkout_pr(
             "Instale GitHub CLI (`gh`) ou Git no PATH para fazer checkout da PR."
         )
 
-    local_ref = f"pr-review-{pr_number}"
+    branch = _pr_head_branch(pr) or f"pr-review-{pr_number}"
     basic = base64.b64encode(f"x-access-token:{token}".encode()).decode("ascii")
     auth_header = f"AUTHORIZATION: basic {basic}"
     git_auth = ["-c", f"http.extraheader={auth_header}"]
-    print(f"PR #{pr_number}: checkout via git (gh nao encontrado)…")
+    print(f"PR #{pr_number}: checkout via git -> branch `{branch}` (gh nao encontrado)…")
     _run(
         ["git", *git_auth, "fetch", "--force", "origin", f"pull/{pr_number}/head"],
         cwd=app_dir,
     )
-    _run(["git", "checkout", "-B", local_ref, "FETCH_HEAD"], cwd=app_dir)
+    _run(["git", "checkout", "-B", branch, "FETCH_HEAD"], cwd=app_dir)
 
 
 def _resolve_repo(cfg: PrReviewConfig) -> str:
@@ -111,6 +116,9 @@ def run_validation(cfg: PrReviewConfig, pr_number: int, *, force: bool = False) 
 
     print(f"PR #{pr_number}: validando ({reason}) @ {sha[:12]}…")
 
+    _phase("checkout", pr_number)
+    _checkout_pr(cfg.app_dir, repo, pr_number, token, pr)
+
     _phase("comentario de inicio na PR", pr_number)
     try:
         upsert_validation_started_comment(
@@ -122,9 +130,6 @@ def run_validation(cfg: PrReviewConfig, pr_number: int, *, force: bool = False) 
         )
     except RuntimeError as e:
         print(f"PR #{pr_number}: aviso — comentario de inicio falhou: {e}", flush=True)
-
-    _phase("checkout", pr_number)
-    _checkout_pr(cfg.app_dir, repo, pr_number, token)
 
     _phase("install validador", pr_number)
     install_ps1 = cfg.validator_root / "install" / "install.ps1"
@@ -189,12 +194,17 @@ def run_validation(cfg: PrReviewConfig, pr_number: int, *, force: bool = False) 
 
     _phase("publicando comentario na PR", pr_number)
     report_path = cfg.app_dir / "api-validator-report.md"
+    public_path = cfg.app_dir / "api-validator-report-public.md"
     if not report_path.is_file():
         print("Relatorio nao gerado.", file=sys.stderr)
         return 2
-    report_body = report_path.read_text(encoding="utf-8")
+    full_report = report_path.read_text(encoding="utf-8")
+    if public_path.is_file():
+        report_body = public_path.read_text(encoding="utf-8")
+    else:
+        report_body = full_report
     upsert_review_comment(repo, pr_number, report_body, token)
-    sync_block_label(repo, pr_number, report_body, cfg.block_label, token)
+    sync_block_label(repo, pr_number, full_report, cfg.block_label, token)
 
     if sha:
         mark_validated(cfg.state_path, pr_number, sha)

@@ -214,7 +214,7 @@ def build_prompt(
 5. Se o diff tiver migration: `EV-PER-006` e `docs/padrao/banco.md` — dados/integridade primeiro; SQL nao pode quebrar a aplicacao na subida.
 
 
-Cite **pelo menos dois caminhos** de arquivo do diff no relatorio (em Critico/Importante ou na Conclusao), ex. `src/main/java/.../Foo.java`.
+Cite **pelo menos dois caminhos** de arquivo do diff em **Critico** ou **Importante**, ex. `src/main/java/.../Foo.java`.
 Achado **Critico**/**Importante**: regra ou doc citada + evidencia (classe/metodo/linha ou trecho).
 """
     else:
@@ -261,7 +261,8 @@ Saida EXATAMENTE nesta ordem, com estes titulos markdown (copie literal):
 ## Melhoria / Ajuste
 ## Conclusao
 Assuma front/consumidor da API. **Prioridade:** em auth/erros/validacao/listagem autenticada, varra **Critico** e **Importante** com docs/validador/critico/consumidor-api.md e docs/validador/importante/consumidor-api.md (loop de login, tenant, contrato quebrado, 401 vs 403, vazamento). So depois preencha **Melhoria / Ajuste** (docs/validador/melhoria-ajuste/consumidor-api.md) para polish que NAO impede o usuario de concluir a tarefa. Melhoria NAO altera a Conclusao.
-Regra: qualquer item em Critico ou Importante (alem de `Nenhum.`) -> ultima linha `Conclusao: NAO APROVAVEL` (nunca APROVAVEL nem COM RESSALVAS).
+Na secao **Conclusao**, escreva **somente** uma linha: `Conclusao: APROVAVEL` ou `Conclusao: NAO APROVAVEL` — sem paragrafos, resumo do diff ou texto meta (ex. agente cloud, escopo, OK operacional).
+Regra: qualquer item em Critico ou Importante (alem de `Nenhum.`) -> `Conclusao: NAO APROVAVEL` (nunca APROVAVEL nem COM RESSALVAS).
 So `Nenhum.` em Critico e Importante -> `Conclusao: APROVAVEL`.
 No diff em service/controller/security: comentario // ou /* dentro de metodo -> **Importante** (EV-SVC-003); metodo publico novo sem JavaDoc -> **Importante** (EV-SVC-002); JavaDoc presente mas fora do padrao (docs/validador/melhoria-ajuste/javadoc.md) -> **Melhoria / Ajuste**.
 Sem achado tecnico: Critico e Importante = `Nenhum.`; Melhoria / Ajuste = `Nenhum.` ou itens de UX de API / JavaDoc.
