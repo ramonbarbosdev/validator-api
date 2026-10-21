@@ -9,6 +9,18 @@ def _label_names(pr: dict[str, Any]) -> set[str]:
     return {str(x.get("name", "")) for x in labels if x.get("name")}
 
 
+def is_block_label_removed(payload: dict[str, Any], block_label: str) -> bool:
+    """pull_request unlabeled: label removida e o nome e o de bloqueio do validador."""
+    if (payload.get("action") or "") != "unlabeled":
+        return False
+    label = payload.get("label")
+    if not isinstance(label, dict):
+        return False
+    removed = str(label.get("name") or "").strip()
+    block = (block_label or "Alteração Necessária").strip()
+    return bool(block and removed == block)
+
+
 def should_validate(
     pr: dict[str, Any],
     *,

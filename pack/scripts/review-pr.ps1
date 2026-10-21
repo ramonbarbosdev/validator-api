@@ -54,9 +54,9 @@ $prTitle = ""
 $prBody = ""
 $hasGh = $null -ne (Get-Command gh -ErrorAction SilentlyContinue)
 
-function Get-PrDiscussionMarkdown {
-    param([int]$PrNum)
-    $fetch = Join-Path $PackageRoot "scripts\pr_human_comments.py"
+function Get-PrPythonMarkdown {
+    param([int]$PrNum, [string]$ScriptName)
+    $fetch = Join-Path $PackageRoot "scripts\$ScriptName"
     if (-not (Test-Path $fetch)) { return "" }
     $prev = $env:PR_NUMBER
     $env:PR_NUMBER = "$PrNum"
@@ -179,7 +179,7 @@ $promptLines += @(
 if ($prBody) {
     $promptLines += "", "## Corpo da PR", $prBody
 }
-$prDiscussion = Get-PrDiscussionMarkdown -PrNum $Pr
+$prDiscussion = Get-PrPythonMarkdown -PrNum $Pr -ScriptName "pr_human_comments.py"
 if ($prDiscussion) {
     $discussionPath = Join-Path $OutDir "pr-$Pr-discussion.md"
     $prDiscussion | Out-File -Encoding utf8 $discussionPath
@@ -187,6 +187,16 @@ if ($prDiscussion) {
         "",
         "Leia a Discussao na PR abaixo como combinado de negocio (api-validator.md).",
         $prDiscussion
+    )
+}
+$prPrevious = Get-PrPythonMarkdown -PrNum $Pr -ScriptName "pr_previous_report.py"
+if ($prPrevious) {
+    $previousPath = Join-Path $OutDir "pr-$Pr-previous-report.md"
+    $prPrevious | Out-File -Encoding utf8 $previousPath
+    $promptLines += @(
+        "",
+        "Relatorio anterior do validador (regressao; api-validator.md).",
+        $prPrevious
     )
 }
 ($promptLines -join [Environment]::NewLine) | Out-File -Encoding utf8 (Join-Path $OutDir "pr-$Pr-prompt.md")

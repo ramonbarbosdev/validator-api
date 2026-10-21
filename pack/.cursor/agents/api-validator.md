@@ -38,11 +38,24 @@ Quando o prompt ou o sidecar traz **Discussao na PR**, trate como **combinado de
 5. **Diff contradiz comentário** sem ser correção óbvia de bug: **Importante** ou **Crítico** conforme impacto funcional/segurança.
 6. Achados continuam exigindo evidência no diff/SPEC; o comentário orienta **o que julgar**, não substitui arquivo/classe/método no relatório.
 
+## Relatório anterior (validador na PR)
+
+Quando o prompt ou o sidecar traz **Relatório anterior do api-validator** (CI / `.api-validator-review/pr-*-previous-report.md`), use para **regressão** — não como escopo de negócio (isso é a discussão humana).
+
+1. **Ler após SPEC e discussão humana**, antes de fechar o veredito: o que estava em **Crítico** ou **Importante** na última publicação na PR.
+2. **Corrigido no diff atual** (evidência no código): **não repita** o mesmo achado; não liste só porque constava no relatório antigo.
+3. **Ainda violado** ou parcialmente corrigido: cite de novo com evidência no diff/SPEC atual (pode referir “persiste desde review anterior” em uma frase, sem copiar o texto inteiro).
+4. **Melhoria / Ajuste** do relatório anterior: repita só se o diff atual ainda merece; não reabra item já resolvido.
+5. **Achados novos** exigem evidência no diff/SPEC; o relatório anterior não autoriza inventar item sem verificação.
+6. Segurança crítica e tenant crítico continuam valendo mesmo que o relatório anterior tenha sido permissivo.
+7. **Sem achado novo em Crítico/Importante** e existindo relatório anterior com itens reais (não só `Nenhum.`): preencha **## Conferência da rodada anterior** com checklist `- [x]` por ponto do relatório anterior que o diff **corrige ou fecha**, cada linha com título curto + caminho de arquivo no diff. Não marque `[x]` sem evidência. Ponto ainda aberto volta em **Crítico** ou **Importante**, não na checklist. Se não houve relatório anterior ou não havia pendências, **omita** a seção.
+
 ## Fontes de verdade (não copiar o conteúdo para o relatório)
 
 | Assunto | Fonte | Quando ler |
 |---------|--------|------------|
 | Escopo | Texto do comando, `docs/SPEC.md`, issue citada, discussão humana na PR (CI) | Sempre, antes do diff |
+| Regressão | Relatório anterior do validador na PR (CI) | Após escopo/discussão; ao julgar Critico/Importante |
 | Índice de padrões | `docs/padrao/README.md` | Dúvida sobre qual doc/regra usar |
 | Segurança / permissão | `.cursor/rules/security.mdc`, `docs/migrations-permissoes.md` (se existir no projeto) | Rota, filtro, `db/central` |
 | Multi-tenant | `.cursor/rules/multi-tenant.mdc` | Service, repository, query |
@@ -210,9 +223,11 @@ Enquanto houver ponto listado em Crítico ou Importante, a conclusão **não** p
 
 ## Formato da resposta (obrigatório)
 
-Somente estas seções, nesta ordem. Sem seção extra (Baixo, Não verificado, Pontos positivos, Conferido).
+Estas seções, nesta ordem. Sem outras (Baixo, Não verificado, Pontos positivos soltos).
 
-A seção **Conclusão** entra no artefato completo (`api-validator-report.md`) para o CI (labels, gate, check). O comentário público na PR **não** exibe Conclusão — exibe **Crítico**, **Importante** e **Melhoria / Ajuste**.
+**Opcional** (só com relatório anterior na PR e Crítico/Importante atuais em `Nenhum.`): **## Conferência da rodada anterior** — checklist `- [x] **título** — \`arquivo\` (como o diff fecha o ponto)` para cada item da rodada anterior verificado. Vai no comentário público da PR.
+
+A seção **Conclusão** entra no artefato completo (`api-validator-report.md`) para o CI (labels, gate, check). O comentário público na PR **não** exibe Conclusão — exibe **Crítico**, **Importante**, **Melhoria / Ajuste** e, se houver, **Conferência da rodada anterior**.
 
 ```text
 
@@ -249,6 +264,12 @@ ou cada item (perspectiva usuário final via consumidor da API; ver docs/validad
   * **Melhoria:** ajuste de status, corpo de erro ou contrato para o front
 
 Itens de **JavaDoc** (padronização, tags faltando) usam o mesmo formato, com **Ajuste:** apontando para `docs/padrao/services.md` ou vizinho do módulo. **Não** colocar comentário inline no meio do código em Melhoria — isso é **Importante**.
+
+## Conferência da rodada anterior
+
+(Omitir se não houver relatório anterior ou pendências na rodada anterior.)
+
+- [x] **Título do achado anterior** — `src/.../Arquivo.java` (o que o diff fez)
 
 ## Conclusão
 

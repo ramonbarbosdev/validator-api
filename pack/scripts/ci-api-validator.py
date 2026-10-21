@@ -13,7 +13,15 @@ if str(_SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPT_DIR))
 
 from pr_human_comments import load_pr_discussion_markdown, write_sidecar  # noqa: E402
+from pr_previous_report import (  # noqa: E402
+    load_pr_previous_report_markdown,
+    write_sidecar as write_previous_sidecar,
+)
 from report_public import strip_conclusion_section  # noqa: E402
+from report_quality import (  # noqa: E402
+    agent_output_incomplete,
+    previous_report_had_findings,
+)
 
 from cursor_sdk import (
     Agent,
@@ -192,6 +200,7 @@ def build_prompt(
     *,
     cloud: bool,
     pr_discussion: str = "",
+    pr_previous_report: str = "",
     changed_files: list[str] | None = None,
 ) -> str:
     agent_rel = ".cursor/agents/api-validator.md"
@@ -242,9 +251,21 @@ Seguranca critica e tenant critico (EV-SEC-*, EV-MTN-001/002/003) prevalecem sob
 Comentario promete comportamento que o diff nao entrega, ou diff contradiz comentario: achado com evidencia + referencia ao comentario.
 """
         discussion_block = f"\n{pr_discussion.strip()}\n"
+
+    previous_rules = ""
+    previous_block = ""
+    if pr_previous_report.strip():
+        previous_rules = """
+**Relatorio anterior do validador (bloco abaixo):** regressao de achados (api-validator.md, secao Relatorio anterior).
+Para Critico/Importante do relatorio anterior: corrigido no diff -> nao repita em Critico/Importante; ainda violado -> cite com evidencia atual.
+Se Critico e Importante desta rodada ficarem `Nenhum.` e o relatorio anterior tinha itens: inclua secao `## Conferencia da rodada anterior` com `- [x] **titulo** — caminho/arquivo.java (como o diff fecha)` por ponto verificado (cite arquivos do diff).
+Nao reabra Melhoria resolvida; achados novos so com evidencia no diff/SPEC.
+"""
+        previous_block = f"\n{pr_previous_report.strip()}\n"
+
     return f"""Voce e o revisor api-validator do esimples-api (Java Spring Boot).
 
-{discussion_rules}
+{discussion_rules}{previous_rules}
 
 {prep}
 
@@ -259,6 +280,8 @@ Saida EXATAMENTE nesta ordem, com estes titulos markdown (copie literal):
 ## Critico
 ## Importante
 ## Melhoria / Ajuste
+## Conferencia da rodada anterior
+(opcional: omita a secao inteira se nao houve relatorio anterior ou nao ha pontos a conferir; se usar, checklist `- [x]` dos itens da rodada anterior fechados neste diff, com caminhos de arquivo)
 ## Conclusao
 Assuma front/consumidor da API. **Prioridade:** em auth/erros/validacao/listagem autenticada, varra **Critico** e **Importante** com docs/validador/critico/consumidor-api.md e docs/validador/importante/consumidor-api.md (loop de login, tenant, contrato quebrado, 401 vs 403, vazamento). So depois preencha **Melhoria / Ajuste** (docs/validador/melhoria-ajuste/consumidor-api.md) para polish que NAO impede o usuario de concluir a tarefa. Melhoria NAO altera a Conclusao.
 Na secao **Conclusao**, escreva **somente** uma linha: `Conclusao: APROVAVEL` ou `Conclusao: NAO APROVAVEL` — sem paragrafos, resumo do diff ou texto meta (ex. agente cloud, escopo, OK operacional).
@@ -266,10 +289,12 @@ Regra: qualquer item em Critico ou Importante (alem de `Nenhum.`) -> `Conclusao:
 So `Nenhum.` em Critico e Importante -> `Conclusao: APROVAVEL`.
 No diff em service/controller/security: comentario // ou /* dentro de metodo -> **Importante** (EV-SVC-003); metodo publico novo sem JavaDoc -> **Importante** (EV-SVC-002); JavaDoc presente mas fora do padrao (docs/validador/melhoria-ajuste/javadoc.md) -> **Melhoria / Ajuste**.
 Sem achado tecnico: Critico e Importante = `Nenhum.`; Melhoria / Ajuste = `Nenhum.` ou itens de UX de API / JavaDoc.
+**Proibido** entregar so o esqueleto (todas as secoes `Nenhum.` sem texto): voce DEVE ler o diff (`git diff origin/{base}...HEAD`) e citar **pelo menos dois** caminhos de arquivo do diff (ex. `src/main/java/.../Foo.java`) — em achado ou em 1-2 frases objetivas do que mudou (ex. em Melhoria). Sem isso o CI rejeita o relatorio.
+A secao **## Conclusao** e obrigatoria (uma linha `Conclusao: APROVAVEL` ou `Conclusao: NAO APROVAVEL`).
 
 git diff --stat (referencia local do disparo):
 {stat}
-{files_block}{discussion_block}
+{files_block}{discussion_block}{previous_block}
 """
 
 
@@ -351,10 +376,14 @@ def main() -> int:
         spec_line = "Sem docs/SPEC.md na branch: gate enxuto (somente git diff vs base)."
 
     pr_discussion = ""
+    pr_previous_report = ""
     if pr.isdigit():
         pr_discussion = load_pr_discussion_markdown(int(pr))
         if pr_discussion:
             write_sidecar(root, int(pr), pr_discussion)
+        pr_previous_report = load_pr_previous_report_markdown(int(pr))
+        if pr_previous_report:
+            write_previous_sidecar(root, int(pr), pr_previous_report)
 
     changed_files = git_diff_names(root, base)
 
@@ -367,6 +396,7 @@ def main() -> int:
         spec_line,
         cloud=(runtime == "cloud"),
         pr_discussion=pr_discussion,
+        pr_previous_report=pr_previous_report,
         changed_files=changed_files,
     )
 
@@ -432,8 +462,45 @@ def main() -> int:
             local=LocalAgentOptions(cwd=str(root)),
         )
 
+    def _run_agent(user_prompt: str):
+        return Agent.prompt(user_prompt, options)
+
     try:
-        result = Agent.prompt(prompt, options)
+        max_attempts = max(1, int(os.environ.get("CURSOR_VALIDATOR_AGENT_ATTEMPTS", "2")))
+    except ValueError:
+        max_attempts = 2
+
+    retry_hint = ""
+    result = None
+    body = ""
+    had_prev_findings = previous_report_had_findings(pr_previous_report)
+    try:
+        for attempt in range(max_attempts):
+            user_prompt = prompt
+            if attempt > 0:
+                samples = ", ".join(f"`{p}`" for p in (changed_files or [])[:3])
+                retry_hint = (
+                    f"\n\n---\nSua resposta anterior foi INCOMPLETA e sera rejeitada pelo CI: "
+                    f"faltou ## Conclusao, texto curto, nenhum arquivo do diff citado"
+                    f"{', ou checklist ## Conferencia da rodada anterior' if had_prev_findings else ''}.\n"
+                    f"Refaca: execute git diff origin/{base}...HEAD, cite >=2 arquivos "
+                    f"(ex.: {samples}), inclua ## Conclusao com uma linha de veredito.\n"
+                    f"Resposta anterior (nao reutilize sem analisar o diff):\n{body[:1200]}\n"
+                )
+                user_prompt = prompt + retry_hint
+            result = _run_agent(user_prompt)
+            if result.status == "error":
+                break
+            body = (result.result or "").strip()
+            if not agent_output_incomplete(
+                body, changed_files, had_previous_report=had_prev_findings
+            ):
+                break
+            if attempt + 1 < max_attempts:
+                print(
+                    "AVISO: relatorio superficial ou incompleto — nova tentativa do agente.",
+                    file=sys.stderr,
+                )
     except OSError as e:
         print(f"SDK bridge falhou: {e}", file=sys.stderr)
         if sys.platform == "win32" and runtime == "cloud":
@@ -452,11 +519,11 @@ def main() -> int:
         print(f"Falha ao iniciar agente: {e}", file=sys.stderr)
         return 1
 
-    if result.status == "error":
-        print(f"Run falhou: {result.id}", file=sys.stderr)
+    if result is None or result.status == "error":
+        rid = result.id if result else "?"
+        print(f"Run falhou: {rid}", file=sys.stderr)
         return 2
 
-    body = (result.result or "").strip()
     if not body:
         body = "_Validador nao retornou texto. Ver logs do workflow._"
 

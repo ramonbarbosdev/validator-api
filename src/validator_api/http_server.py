@@ -9,7 +9,7 @@ from typing import Any
 
 from validator_api.auth import authorize_request
 from validator_api.config import PrReviewConfig, load_env_file
-from validator_api.gate import should_validate
+from validator_api.gate import is_block_label_removed, should_validate
 from validator_api.github import verify_webhook_signature
 from validator_api.queue import QueueJob, get_queue
 from validator_api.runner import run_validation
@@ -263,11 +263,18 @@ class ApiHandler(BaseHTTPRequestHandler):
             resp["pr"] = pr_num
 
         if run_it and pr_num:
+            force = (
+                event == "pull_request"
+                and is_block_label_removed(payload, cfg.block_label)
+            )
+            if force:
+                reason = f"{reason}; revalidacao (label de bloqueio removida)"
             position, pending = _enqueue_pr(
                 pr_num,
                 event=event_label,
                 reason=reason,
                 head_sha=head_sha,
+                force=force,
             )
             print(f"[webhook] {event_label}: PR #{pr_num} -> fila pos {position} ({reason})")
             resp["queued"] = True

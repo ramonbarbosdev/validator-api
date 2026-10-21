@@ -24,7 +24,7 @@ Quality gate do diff. Com **escopo ampliado**, inclui SPEC, REST e testes confor
 
 
 
-1. Escopo: texto após `/api-validator`, `docs/SPEC.md` na branch, issue citada ou **Discussao na PR** (CI / `.api-validator-review/pr-*-discussion.md`). Sem escopo, perguntar e parar.
+1. Escopo: texto após `/api-validator`, `docs/SPEC.md` na branch, issue citada ou **Discussao na PR** (CI / `.api-validator-review/pr-*-discussion.md`). Se houver **relatorio anterior** (CI / `pr-*-previous-report.md`), usar para regressao; se Critico/Importante ficarem `Nenhum.`, preencher **Conferencia da rodada anterior** com checklist `- [x]` dos pontos fechados. Sem escopo, perguntar e parar.
 
 2. Ler `docs/validador/processo/inteligente.md` e seguir o roteiro SPEC (resultado → DDL → domínio → HTTP → aceite).
 

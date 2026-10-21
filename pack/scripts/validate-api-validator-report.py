@@ -6,29 +6,18 @@ import os
 import re
 import subprocess
 import sys
-import unicodedata
 from pathlib import Path
 
 from report_public import write_public_report
-
-
-def norm(text: str) -> str:
-    """ASCII minusculo sem acentos (Conclusao == Conclusão)."""
-    folded = unicodedata.normalize("NFKD", text)
-    return folded.encode("ascii", "ignore").decode().lower()
-
-
-def file_mentioned_in_report(name: str, body: str) -> bool:
-    """Caminho completo, nome do arquivo ou stem da classe no relatorio."""
-    if name in body:
-        return True
-    base = Path(name).name
-    if base in body:
-        return True
-    stem = Path(name).stem
-    if len(stem) >= 4 and re.search(rf"\b{re.escape(stem)}\b", body):
-        return True
-    return False
+from report_quality import (
+    mentions_any_changed_file,
+    norm,
+    parse_conclusion_verdict,
+    previous_report_had_findings,
+    report_sections,
+    section_has_findings,
+    has_previous_round_checklist,
+)
 
 
 def git_diff_names(root: Path, base: str) -> list[str]:
@@ -65,52 +54,8 @@ def has_conclusion_verdict(body: str) -> bool:
     return parse_conclusion_verdict(body) is not None
 
 
-def parse_conclusion_verdict(body: str) -> str | None:
-    """Retorna 'nao aprovavel' | 'aprovavel com ressalvas' | 'aprovavel' (normalizado)."""
-    nbody = norm(body)
-    m = re.search(
-        r"conclus[aã]o\s*:?\s*"
-        r"(nao\s+aprov[aá]vel|aprov[aá]vel\s+com\s+ressalvas|aprov[aá]vel)\b",
-        nbody,
-    )
-    if m:
-        return m.group(1)
-    m2 = re.search(
-        r"(?m)^##\s*conclus[aã]o\s*\n\s*"
-        r"(nao\s+aprov[aá]vel|aprov[aá]vel\s+com\s+ressalvas|aprov[aá]vel)\s*$",
-        nbody,
-    )
-    if m2:
-        return m2.group(1)
-    return None
-
-
-def _report_sections(body: str) -> dict[str, str]:
-    sections: dict[str, str] = {}
-    chunks = re.split(r"(?m)^##\s+", body)
-    for chunk in chunks:
-        chunk = chunk.strip()
-        if not chunk:
-            continue
-        title_line, _, rest = chunk.partition("\n")
-        sections[norm(title_line.strip())] = rest
-    return sections
-
-
-def section_has_findings(section_body: str) -> bool:
-    t = section_body.strip()
-    if not t:
-        return False
-    compact = re.sub(r"\s+", " ", norm(t)).strip()
-    if re.fullmatch(r"nenhum\.?", compact):
-        return False
-    if compact.startswith("nenhum.") and len(compact) < 24:
-        return False
-    return True
-
-
 def check_conclusion_matches_findings(body: str) -> str | None:
-    sections = _report_sections(body)
+    sections = report_sections(body)
     critico = sections.get("critico", "")
     importante = sections.get("importante", "")
     has_crit = section_has_findings(critico)
@@ -185,13 +130,27 @@ def main() -> int:
         base = os.environ.get("GITHUB_BASE_REF", "develop").removeprefix("origin/")
         changed = git_diff_names(root, base)
         if changed:
-            mentioned = any(
-                file_mentioned_in_report(name, body) for name in changed[:40]
-            )
-            if not mentioned:
+            if not mentions_any_changed_file(body, changed):
                 errors.append(
                     "Relatorio nao cita nenhum arquivo do diff "
                     f"(ex.: {changed[0]}). Revisao provavelmente superficial."
+                )
+
+    pr_raw = os.environ.get("PR_NUMBER", "").strip()
+    prev_path = None
+    if pr_raw.isdigit():
+        prev_path = root / ".api-validator-review" / f"pr-{pr_raw}-previous-report.md"
+    prev_md = prev_path.read_text(encoding="utf-8") if prev_path and prev_path.is_file() else ""
+    if previous_report_had_findings(prev_md):
+        sections = report_sections(body)
+        if not section_has_findings(sections.get("critico", "")) and not section_has_findings(
+            sections.get("importante", "")
+        ):
+            if not has_previous_round_checklist(body):
+                errors.append(
+                    "Havia pendencias no relatorio anterior: inclua "
+                    "## Conferencia da rodada anterior com checklist - [x] por ponto fechado "
+                    "(ou achados abertos em Critico/Importante)."
                 )
 
     if errors:

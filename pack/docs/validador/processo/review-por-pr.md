@@ -144,6 +144,17 @@ O CI e o `review-pr` podem incluir **comentários e reviews de pessoas** no prom
 
 Discussão entra na **precedência de escopo** (combinado de negócio); o agente não deve reprovar por padrão genérico quando o comentário humano explica a intenção e o diff está alinhado. Achados continuam exigindo evidência no diff/SPEC; segurança/tenant crítico não é anulado por comentário.
 
+## Relatório anterior do validador (regressão)
+
+O CI e o `review-pr` buscam o **último comentário** na PR com `<!-- review -->` (relatório publicado pelo bot) **antes** de rodar o agente e incluem no prompt.
+
+- Script: `scripts/pr_previous_report.py` (API GitHub; mesmo token que comentários humanos).
+- Artefato: `.api-validator-review/pr-<n>-previous-report.md`.
+- Desligar: `CURSOR_VALIDATOR_PREVIOUS_REPORT=0`.
+- Limite de texto: `CURSOR_VALIDATOR_PREVIOUS_REPORT_MAX_CHARS` (padrão 8000).
+
+O agente trata como **regressão**: itens Crítico/Importante corrigidos no diff não devem ser repetidos; persistência exige evidência nova. Com tudo ok nesta rodada, pode publicar **## Conferência da rodada anterior** com checklist `- [x]` dos pontos fechados (visível no comentário da PR). Não substitui discussão humana nem SPEC.
+
 ## Comentário na PR
 
 Após o relatório humano ou do agente:

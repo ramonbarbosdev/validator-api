@@ -96,7 +96,7 @@ Abra a URL do Vite; o proxy encaminha `/validator-api` para `localhost:8765`.
 | Env | Efeito |
 |-----|--------|
 | `API_VALIDATOR_REQUIRE_LABEL=validar-api` | Só enfileira PR com essa label |
-| `API_VALIDATOR_BLOCK_LABEL` | PR com label de bloqueio é ignorada pelo webhook |
+| `API_VALIDATOR_BLOCK_LABEL` | Com a label, webhook ignora; remover a label reenfileira validação (mesmo commit) |
 
 ## Problemas comuns
 
