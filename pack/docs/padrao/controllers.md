@@ -101,7 +101,8 @@ public ResponseEntity<Void> validarRemocaoSubcategoria(...) {
 
 ## Sub-recursos e coleções filhas
 
-- Rotas aninhadas (`/entidades/{id}/…`, `/conta-pagar/{id}/pagamentos`) delegam ao **service** do agregado ou ao service do filho — nunca repository no controller.
+- Rotas aninhadas (`/entidades/{id}/…`, `/conta-pagar/{id}/pagamentos`) ficam no **mesmo** `@RestController` do pai (`EntidadeController`, `ContaReceberController`) — `GET`/`POST` da aba não vão em controller dedicado só do filho (`EV-MD-004`), exceto desenho alternativo **justificado** na SPEC ou na atividade/comentários da PR.
+- Handlers delegam ao **service** do agregado ou ao service do filho — nunca repository no controller.
 - Ordem de paths e colisão com `/{id}`: [`colecao-filha-vinculada-pai.md`](colecao-filha-vinculada-pai.md), `docs/validador/processo/escopo-e-rest.md`.
 
 ---

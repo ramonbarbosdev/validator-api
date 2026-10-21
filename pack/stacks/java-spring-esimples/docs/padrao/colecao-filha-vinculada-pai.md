@@ -67,7 +67,7 @@ Filhos que só existem no contexto do pai. **Não** embutir essas coleções na 
 
 **Variante 1:1:** embutido no request/response do pai (ex.: `retencao`), sem controller do filho.
 
-**Exceção:** sub-recurso com fluxo próprio ou permissões distintas — rotas aninhadas ou controller dedicado. Novas features que caibam nos quatro critérios **não** criam `XxxFilhoController` só por conveniência.
+**Exceção:** outro desenho (controller dedicado, fluxo ou permissão distinta) só com **justificativa na SPEC, na atividade ou em comentários humanos na PR**; o validador não reprova por padrão genérico se o combinado estiver claro e o diff alinhado (`EV-MD-004`). Caso contrário, **não** criar `XxxFilhoController` só para expor `GET` da aba.
 
 ### Persistência
 
@@ -84,7 +84,7 @@ Filhos que só existem no contexto do pai. **Não** embutir essas coleções na 
 | `GET /{pai}` paginado | **Padrão C** — sem coleções pesadas |
 | `GET /{pai}/{id}` / abas | Conforme [`mestre-detalhe-conta-receber.md`](mestre-detalhe-conta-receber.md) |
 | `POST` / `PUT` pai | Body com `List<…Request>` ou 1:1; `substituir*` / `sincronizar*` no **service do pai** |
-| Controller do filho | **Não** para coleção agregada clássica |
+| Controller do filho | **Não** — `GET`/`POST` da aba no **controller do pai** (`/{pai}/{id}/filhos`); service do filho pode existir |
 | Permissões | Alinhar ao recurso pai |
 
 Nomenclatura típica: `substituirEnderecos`, `sincronizarPagamentos`, `sincronizarRecebimentos`, `substituirItens`.

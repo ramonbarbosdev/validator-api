@@ -13,12 +13,12 @@ from validator_api.config import PrReviewConfig
 from validator_api.gate import should_validate
 from validator_api.github import (
     fetch_pr,
-    parse_report_verdict,
     resolve_token,
-    sync_block_label,
+    sync_validation_labels,
     upsert_review_comment,
     upsert_validation_started_comment,
 )
+from validator_api.report_gate import needs_block_label
 from validator_api.state import get_validated_sha, load_state, mark_validated
 
 
@@ -162,6 +162,7 @@ def run_validation(cfg: PrReviewConfig, pr_number: int, *, force: bool = False) 
     env["GITHUB_BASE_REF"] = cfg.base_branch
     env["PR_NUMBER"] = str(pr_number)
     env["PR_HTML_URL"] = pr.get("html_url") or ""
+    env["GITHUB_PR_BODY"] = (pr.get("body") or "").strip()
     env.setdefault("CURSOR_VALIDATOR_RUNTIME", "cloud")
     env.setdefault("CURSOR_VALIDATOR_STRICT_REPORT", "1")
 
@@ -190,14 +191,58 @@ def run_validation(cfg: PrReviewConfig, pr_number: int, *, force: bool = False) 
     else:
         _run([sys.executable, str(ci)], cwd=cfg.app_dir, env=env)
 
-    _phase("validando relatorio", pr_number)
-    _run([sys.executable, str(validate)], cwd=cfg.app_dir, env=env)
-
-    _phase("publicando comentario na PR", pr_number)
     report_path = cfg.app_dir / "api-validator-report.md"
     public_path = cfg.app_dir / "api-validator-report-public.md"
+
+    def _sync_labels(full_report: str, *, gate_failed: bool = False) -> None:
+        block = needs_block_label(
+            full_report,
+            cfg.app_dir,
+            cfg.validator_root,
+            pr_number=pr_number,
+            gate_failed=gate_failed,
+        )
+        try:
+            sync_validation_labels(
+                repo,
+                pr_number,
+                token,
+                block_label=cfg.block_label,
+                approve_label=cfg.approve_label,
+                block=block,
+            )
+            if block:
+                print(
+                    f"PR #{pr_number}: label `{cfg.block_label or 'Alteração Necessária'}` aplicada "
+                    f"(pendencias ou gate).",
+                    flush=True,
+                )
+            elif cfg.approve_label:
+                print(
+                    f"PR #{pr_number}: label `{cfg.approve_label}` aplicada (sem pendencias).",
+                    flush=True,
+                )
+        except RuntimeError as e:
+            print(f"PR #{pr_number}: aviso — labels da PR falharam: {e}", flush=True)
+
+    _phase("validando relatorio", pr_number)
+    try:
+        _run([sys.executable, str(validate)], cwd=cfg.app_dir, env=env)
+    except subprocess.CalledProcessError:
+        gate_text = (
+            report_path.read_text(encoding="utf-8") if report_path.is_file() else ""
+        )
+        _sync_labels(gate_text, gate_failed=True)
+        print(
+            f"PR #{pr_number}: gate do relatorio falhou — label de bloqueio aplicada.",
+            file=sys.stderr,
+        )
+        return 1
+
+    _phase("publicando comentario na PR", pr_number)
     if not report_path.is_file():
         print("Relatorio nao gerado.", file=sys.stderr)
+        _sync_labels("", gate_failed=True)
         return 2
     full_report = report_path.read_text(encoding="utf-8")
     if public_path.is_file():
@@ -205,15 +250,16 @@ def run_validation(cfg: PrReviewConfig, pr_number: int, *, force: bool = False) 
     else:
         report_body = full_report
     upsert_review_comment(repo, pr_number, report_body, token)
-    try:
-        sync_block_label(repo, pr_number, full_report, cfg.block_label, token)
-        if parse_report_verdict(full_report) != "aprovavel":
-            print(
-                f"PR #{pr_number}: label `{cfg.block_label or 'Alteração Necessária'}` aplicada.",
-                flush=True,
-            )
-    except RuntimeError as e:
-        print(f"PR #{pr_number}: aviso — label de bloqueio falhou: {e}", flush=True)
+    _sync_labels(full_report)
+
+    if needs_block_label(
+        full_report,
+        cfg.app_dir,
+        cfg.validator_root,
+        pr_number=pr_number,
+    ):
+        print(f"PR #{pr_number}: concluido com pendencias (label ativa).", flush=True)
+        return 1
 
     if sha:
         mark_validated(cfg.state_path, pr_number, sha)

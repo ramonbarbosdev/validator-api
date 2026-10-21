@@ -34,7 +34,7 @@ Fluxo de revisão: **escopo primeiro**, achados **concretos**, sem lista de melh
 | Controller / REST fino | `docs/padrao/controllers.md` | `EntidadeController`, `BancoController` |
 | Service / regra de negócio | `docs/padrao/services.md` | `BancoService`, `CatalogoService`, `ContaPagarService` |
 | Nomenclatura PT (método, model, coluna) | `docs/padrao/nomenclatura-portugues.md` | `Banco.java`, `BancoService`, `EV-NOM-003` |
-| Vínculo filho (ex. cliente superior / dependente) | SPEC + `docs/padrao/colecao-filha-vinculada-pai.md` | Sub-rota em `Entidade*Controller`, `docs/padrao/nomenclatura-colunas-sql.md` |
+| Vínculo filho (ex. cliente superior / dependente) | SPEC + `docs/padrao/colecao-filha-vinculada-pai.md` + `docs/validador/processo/checklist-aba-filho-pai.md` | `EntidadeService` / `EntidadeRequest` vs sub-rota; `EV-MD-*` |
 | Importação de contrato (PDF / prévia) | SPEC da tarefa | `ContratoImportacaoController`, `ContratoImportacaoService` |
 | Domínio fiscal catálogo (LC 116, NBS, IBS) | SPEC da tarefa | `CatalogoFiscalDominioController`, `CatalogoRequest.validar()` |
 

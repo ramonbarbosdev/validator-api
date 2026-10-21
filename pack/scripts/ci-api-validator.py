@@ -22,6 +22,11 @@ from report_quality import (  # noqa: E402
     agent_output_incomplete,
     previous_report_had_findings,
 )
+from filho_pai_analyze import analyze_repo, format_code_facts_markdown  # noqa: E402
+from scope_filho_pai import (  # noqa: E402
+    filho_pai_prompt_block,
+    should_apply_filho_pai_checklist,
+)
 
 from cursor_sdk import (
     Agent,
@@ -201,6 +206,8 @@ def build_prompt(
     cloud: bool,
     pr_discussion: str = "",
     pr_previous_report: str = "",
+    filho_pai_checklist: bool = False,
+    filho_pai_code_facts: str = "",
     changed_files: list[str] | None = None,
 ) -> str:
     agent_rel = ".cursor/agents/api-validator.md"
@@ -263,9 +270,14 @@ Nao reabra Melhoria resolvida; achados novos so com evidencia no diff/SPEC.
 """
         previous_block = f"\n{pr_previous_report.strip()}\n"
 
+    filho_pai_block = filho_pai_prompt_block() if filho_pai_checklist else ""
+    code_facts_block = ""
+    if filho_pai_code_facts.strip():
+        code_facts_block = f"\n{filho_pai_code_facts.strip()}\n"
+
     return f"""Voce e o revisor api-validator do esimples-api (Java Spring Boot).
 
-{discussion_rules}{previous_rules}
+{discussion_rules}{previous_rules}{filho_pai_block}
 
 {prep}
 
@@ -294,7 +306,7 @@ A secao **## Conclusao** e obrigatoria (uma linha `Conclusao: APROVAVEL` ou `Con
 
 git diff --stat (referencia local do disparo):
 {stat}
-{files_block}{discussion_block}{previous_block}
+{files_block}{discussion_block}{previous_block}{code_facts_block}
 """
 
 
@@ -386,6 +398,22 @@ def main() -> int:
             write_previous_sidecar(root, int(pr), pr_previous_report)
 
     changed_files = git_diff_names(root, base)
+    pr_body = os.environ.get("GITHUB_PR_BODY", "").strip()
+    filho_pai_analysis = analyze_repo(root)
+    filho_pai_code_facts = format_code_facts_markdown(filho_pai_analysis)
+    filho_pai_checklist = should_apply_filho_pai_checklist(
+        changed_files,
+        pr_body=pr_body,
+        pr_discussion=pr_discussion,
+    ) or filho_pai_analysis.has_findings()
+    if filho_pai_checklist:
+        reason = "diff/atividade" if filho_pai_code_facts else "heuristica"
+        if filho_pai_code_facts:
+            reason = "analise de codigo + " + reason
+        print(
+            f"Escopo mestre-filho ({reason}) — checklist EV-MD-* no prompt.",
+            file=sys.stderr,
+        )
 
     model = os.environ.get("CURSOR_VALIDATOR_MODEL", "composer-2.5")
     prompt = build_prompt(
@@ -397,6 +425,8 @@ def main() -> int:
         cloud=(runtime == "cloud"),
         pr_discussion=pr_discussion,
         pr_previous_report=pr_previous_report,
+        filho_pai_checklist=filho_pai_checklist,
+        filho_pai_code_facts=filho_pai_code_facts,
         changed_files=changed_files,
     )
 

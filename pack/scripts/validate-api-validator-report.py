@@ -10,14 +10,15 @@ from pathlib import Path
 
 from report_public import write_public_report
 from report_quality import (
+    has_previous_round_checklist,
     mentions_any_changed_file,
     norm,
     parse_conclusion_verdict,
     previous_report_had_findings,
     report_sections,
     section_has_findings,
-    has_previous_round_checklist,
 )
+from verify_filho_pai_code import verify_report_vs_code  # noqa: E402
 
 
 def git_diff_names(root: Path, base: str) -> list[str]:
@@ -152,6 +153,9 @@ def main() -> int:
                     "## Conferencia da rodada anterior com checklist - [x] por ponto fechado "
                     "(ou achados abertos em Critico/Importante)."
                 )
+
+    pr_num = pr_raw if pr_raw.isdigit() else None
+    errors.extend(verify_report_vs_code(root, body, pr_number=pr_num))
 
     if errors:
         print("Relatorio reprovado no gate de qualidade:", file=sys.stderr)

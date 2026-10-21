@@ -1,0 +1,22 @@
+---
+description: Aba / filho no cadastro — mestre–detalhe e agregado pai (API Validator EV-MD-*)
+globs: src/main/java/**/controller/**/*.java,src/main/java/**/service/**/*Service.java,src/main/java/**/dto/**/*Request*.java
+alwaysApply: false
+---
+
+# Mestre–detalhe e filho no pai (EV-MD)
+
+Norma: `docs/padrao/colecao-filha-vinculada-pai.md`, `docs/padrao/mestre-detalhe-conta-receber.md` (stack e-Simples). Checklist: `docs/validador/processo/checklist-aba-filho-pai.md`.
+
+| Código | Severidade | Regra |
+|--------|------------|--------|
+| **EV-MD-001** | IMPORTANTE | No **diff**, nova aba/filho sob cadastro existente (sub-rota `/{id}/…`, entidade de vínculo, DTO de filho): comparar com **outro filho já agregado no mesmo pai** no repo (ex.: `EntidadeRequest` + `EntidadeService` para endereços/contatos). Se o vizinho persiste no `POST`/`PUT` do pai e o filho novo só tem service/rota separada **sem** justificativa na SPEC, reportar gap de agregado e risco de “Salvar” da tela não persistir a aba. |
+| **EV-MD-002** | IMPORTANTE | No **diff**, leitura da aba: se o módulo de referência (conta a receber/pagar) expõe filho só em sub-rota e mestre com coleção vazia, o novo filho deve seguir o mesmo desenho **ou** a SPEC deve exigir lista no `GET /{id}`; inconsistência com vizinho financeiro **e** com outros filhos do mesmo pai → achado com evidência. |
+| **EV-MD-003** | CRÍTICO | `POST` do pai sem `id` e filho com FK obrigatória ao pai: se aceite/SPEC/card tratam vínculo no **primeiro** save e o diff não permite persistir filho nesse fluxo, reportar **Crítico** (fluxo do consumidor impossível). |
+| **EV-MD-004** | IMPORTANTE | No **diff**, novo `*Controller` (ou classe `@RestController`) **só** para o filho/aba (ex.: `EntidadeClienteSuperiorController`, prefixo próprio) quando o padrão do repo é sub-rota no **controller do pai** (`EntidadeController`, `ContaReceberController` com `GET /{id}/recebimentos`). Reportar: mover handlers para o controller do mestre; service do filho pode existir, mas a superfície HTTP do detalhe/aba fica no pai. **Não reprovar** se a atividade, `docs/SPEC.md`, comentários humanos na PR (CI) ou discussão no prompt explicam **por que** o desenho difere (permissão, legado, módulo HTTP distinto, etc.) — cite a justificativa no relatório e confira se o diff implementa o combinado. |
+
+Não exigir `List<>` no `EntidadeRequest` quando a SPEC literal define **somente** sub-rota pós-criação e o front está fora do escopo — documentar na SPEC.
+
+Checklist `[x]` na **Conferência da rodada anterior** **não** fecha EV-MD-004: se `EntidadeDependenteController` (ou equivalente) ainda existir como `@RestController`, o achado permanece em **Importante** até remover/mover handlers ou justificar na SPEC/PR. JavaDoc no controller do filho não conta como conformidade de superfície HTTP.
+
+Ref: `EntidadeController`, `ContaReceberController`, `ContaReceberService`, `EntidadeService`, `docs/validador/processo/checklist-aba-filho-pai.md`, `verify_filho_pai_code.py`.

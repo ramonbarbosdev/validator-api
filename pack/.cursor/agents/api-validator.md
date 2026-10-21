@@ -73,6 +73,7 @@ Quando o prompt ou o sidecar traz **Relatório anterior do api-validator** (CI /
 | Erros que bloqueiam o usuário (front) | `docs/validador/critico/consumidor-api.md`, `docs/validador/importante/consumidor-api.md` | **Antes** de Melhoria: classificar Crítico/Importante |
 | Resposta ao usuário (polish) | `docs/validador/melhoria-ajuste/consumidor-api.md` | Só o que **não** é defeito bloqueante |
 | Padrão C (listagem) + agregado pai/filho | `docs/padrao/colecao-filha-vinculada-pai.md` (se instalado) | Listagem enxuta; ver também `revisao.overlay.md` |
+| Nova aba / filho no cadastro | `docs/validador/processo/checklist-aba-filho-pai.md`, `EV-MD-*` | Diff ou SPEC/card com aba, vínculo, sub-rota `/{id}/…`; desvio (ex. controller só do filho) só se atividade/SPEC/discussão na PR justificar |
 | Validador inteligente (roteiro SPEC) | `docs/validador/processo/inteligente.md` | Sempre que houver SPEC ou escopo ampliado |
 | Nomenclatura PT (método, model, campo) | `docs/padrao/nomenclatura-portugues.md`, `EV-NOM-003`, `EV-NOM-004` | Diff com identificadores novos |
 | Nomenclatura colunas `id_`/`nm_` tudojunto | `docs/padrao/nomenclatura-colunas-sql.md`, `EV-DDL-001` | Migration/entity com nomes literais na SPEC |

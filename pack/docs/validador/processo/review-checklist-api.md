@@ -14,6 +14,15 @@ Uso com `/api-validator` e escopo ampliado ([`escopo-e-rest.md`](escopo-e-rest.m
 - [ ] Fora de escopo respeitado.
 - [ ] Cada rota do bloco **Contrato HTTP** da SPEC existe e responde como descrito.
 
+## Aba / filho no cadastro (mestre–detalhe)
+
+Ative se SPEC, card ou diff citam **aba**, **vínculo**, **cliente superior**, sub-rota `…/{id}/…` ou novo filho em `Entidade` / financeiro / colaborador.
+
+- [ ] Checklist completo: [`checklist-aba-filho-pai.md`](checklist-aba-filho-pai.md) + `EV-MD-*`.
+- [ ] Comparar escrita com filho vizinho no **mesmo** pai (`EntidadeRequest` / `EntidadeService`).
+- [ ] Comparar leitura com `mestre-detalhe-conta-receber.md` (mestre leve, aba em sub-rota).
+- [ ] Sem `*FilhoController` só para a aba — `GET`/`POST` no controller do pai (`EV-MD-004`), salvo justificativa na SPEC/atividade/PR.
+
 ## REST e controllers
 
 - [ ] `@RequestMapping` 1º segmento alinhado a permissão dinâmica (`EV-REST-001`).

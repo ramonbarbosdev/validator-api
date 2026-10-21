@@ -26,6 +26,18 @@ O que passa a ser verdade quando estiver pronto.
 | `src/main/resources/db/migration/V...sql` | criar | <colunas/tabelas> |
 | `src/test/java/.../XxxServiceTest.java` | criar | <caso> |
 
+## Aba / filho no cadastro (se aplicável)
+
+Preencha quando a tela tiver **aba** ou vínculo 1:N no mesmo cadastro.
+
+| Pergunta | Resposta |
+|----------|----------|
+| Salvar filho no **mesmo** `POST`/`PUT` do pai? | sim / não (se não: após qual passo?) |
+| `GET /{pai}/{id}` inclui lista do filho? | sim / não (se não: path da aba `GET …/{id}/…`) |
+| Filho vizinho no mesmo pai a espelhar | ex.: `enderecos` em `EntidadeRequest` |
+| HTTP da aba no controller do pai | sim / não — se **não**, justificar aqui (permissão, legado, …) |
+| Regras de domínio do vínculo | ex.: só `flCliente`, sem ciclo superior |
+
 ## Contrato HTTP (obrigatório se a feature expõe ou consome API)
 
 Liste **cada** chamada que o front ou integrador fará. O validador usa isto no **escopo ampliado** (`docs/validador/processo/escopo-e-rest.md`).

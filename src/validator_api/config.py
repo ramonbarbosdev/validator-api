@@ -62,6 +62,7 @@ class PrReviewConfig:
     repository: str
     base_branch: str
     block_label: str
+    approve_label: str
     require_label: str
     state_path: Path
     stack: str
@@ -83,6 +84,7 @@ class PrReviewConfig:
             repository=repo,
             base_branch=_env("GITHUB_BASE_REF", "develop"),
             block_label=_env("API_VALIDATOR_BLOCK_LABEL", "Alteração Necessária"),
+            approve_label=_env("API_VALIDATOR_APPROVE_LABEL", "Aprovado"),
             require_label=_env("API_VALIDATOR_REQUIRE_LABEL"),
             state_path=state,
             stack=_env("API_VALIDATOR_STACK", "java-spring-esimples"),

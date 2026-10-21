@@ -72,7 +72,8 @@ Cada **novo commit** na PR gera `pull_request` + action **`synchronize`** → ru
 | Env | Comportamento |
 |-----|----------------|
 | `API_VALIDATOR_REQUIRE_LABEL=validar-api` | só valida se a PR tiver essa label |
-| `API_VALIDATOR_BLOCK_LABEL` (padrão Alteração Necessária) | com a label, webhook **ignora**; após NÃO APROVÁVEL o runner **aplica** a label; ao **remover** a label (`unlabeled`), dispara validação de novo no mesmo SHA (`force`, ignora `automation-state`) |
+| `API_VALIDATOR_BLOCK_LABEL` (padrão Alteração Necessária) | com a label, webhook **ignora**; o runner **aplica** se houver pendências (achados, gate, código); **remove** quando tudo ok; ao **remover** (`unlabeled`), revalida (`force`) |
+| `API_VALIDATOR_APPROVE_LABEL` (padrão `Aprovado`) | aplicada quando **não** há pendências; removida quando há bloqueio. Vazio = desliga |
 
 ## 6. VPS em produção
 

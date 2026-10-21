@@ -7,7 +7,8 @@ import sys
 import unicodedata
 from pathlib import Path
 
-from validator_api.github import sync_block_label, upsert_review_comment
+from validator_api.github import sync_validation_labels, upsert_review_comment
+from validator_api.report_gate import needs_block_label
 
 
 def _norm(text: str) -> str:
@@ -48,9 +49,26 @@ def main() -> int:
 
     upsert_review_comment(repo, pr_number, public_text, token)
     block_label = os.environ.get("API_VALIDATOR_BLOCK_LABEL", "Alteração Necessária")
-    sync_block_label(repo, pr_number, full_text, block_label, token)
+    approve_label = os.environ.get("API_VALIDATOR_APPROVE_LABEL", "Aprovado")
+    validator_root = Path(
+        os.environ.get("VALIDATOR_ROOT", os.environ.get("CURSOR_VALIDATOR_ROOT", "."))
+    ).resolve()
+    block = needs_block_label(
+        full_text,
+        root,
+        validator_root,
+        pr_number=pr_number,
+    )
+    sync_validation_labels(
+        repo,
+        pr_number,
+        token,
+        block_label=block_label,
+        approve_label=approve_label,
+        block=block,
+    )
 
-    if _is_nao_aprovavel(full_text):
+    if block or _is_nao_aprovavel(full_text):
         print("Conclusao NAO APROVAVEL — job falhou.", file=sys.stderr)
         return 1
 

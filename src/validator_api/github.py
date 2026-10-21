@@ -150,21 +150,68 @@ def parse_report_verdict(report_text: str) -> str | None:
     return "aprovavel"
 
 
-def sync_block_label(repo: str, pr_number: int, report_text: str, block_label: str, token: str) -> None:
-    """Apos o comentario de review: APROVAVEL remove a label; caso contrario aplica."""
-    label = (block_label or "Alteração Necessária").strip()
+def _delete_pr_label(repo: str, pr_number: int, label: str, token: str) -> None:
+    if not label:
+        return
+    del_url = (
+        f"https://api.github.com/repos/{repo}/issues/{pr_number}/labels/"
+        f"{urllib.parse.quote(label)}"
+    )
+    try:
+        api_request("DELETE", del_url, token)
+    except RuntimeError:
+        pass
+
+
+def _add_pr_label(repo: str, pr_number: int, label: str, token: str) -> None:
     if not label:
         return
     labels_url = f"https://api.github.com/repos/{repo}/issues/{pr_number}/labels"
-    verdict = parse_report_verdict(report_text)
-    if verdict == "aprovavel":
-        del_url = (
-            f"https://api.github.com/repos/{repo}/issues/{pr_number}/labels/"
-            f"{urllib.parse.quote(label)}"
-        )
-        try:
-            api_request("DELETE", del_url, token)
-        except RuntimeError:
-            pass
-        return
     api_request("POST", labels_url, token, [label])
+
+
+def sync_validation_labels(
+    repo: str,
+    pr_number: int,
+    token: str,
+    *,
+    block_label: str,
+    approve_label: str,
+    block: bool,
+) -> None:
+    """Pendencias: bloqueio on, aprovado off. Sem pendencias: bloqueio off, aprovado on."""
+    block_name = (block_label or "Alteração Necessária").strip()
+    approve_name = (approve_label or "").strip()
+    if block:
+        if approve_name:
+            _delete_pr_label(repo, pr_number, approve_name, token)
+        if block_name:
+            _add_pr_label(repo, pr_number, block_name, token)
+        return
+    if block_name:
+        _delete_pr_label(repo, pr_number, block_name, token)
+    if approve_name:
+        _add_pr_label(repo, pr_number, approve_name, token)
+
+
+def sync_block_label(
+    repo: str,
+    pr_number: int,
+    report_text: str,
+    block_label: str,
+    token: str,
+    *,
+    block: bool | None = None,
+    approve_label: str = "",
+) -> None:
+    """Compat: delega para sync_validation_labels (bloqueio + opcional aprovado)."""
+    if block is None:
+        block = parse_report_verdict(report_text) != "aprovavel"
+    sync_validation_labels(
+        repo,
+        pr_number,
+        token,
+        block_label=block_label,
+        approve_label=approve_label,
+        block=block,
+    )
