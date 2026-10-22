@@ -36,6 +36,8 @@ Quality gate do diff. Com **escopo ampliado**, inclui SPEC, REST e testes confor
 
 5b. Auth/erros/validação no diff: **primeiro** `docs/validador/critico/consumidor-api.md` + `docs/validador/importante/consumidor-api.md`; **depois** `docs/validador/melhoria-ajuste/consumidor-api.md` (Melhoria / Ajuste, só polish).
 
+5c. Task vs patch (`git diff --stat`): se a atividade pede uma feature e a PR mistura refatoração grande ou outro assunto → `docs/validador/melhoria-ajuste/escopo-diff-pr.md` (Melhoria / Ajuste, com **Em linguagem simples**).
+
 6. Checklist: `docs/validador/processo/review-checklist-api.md` (seções pertinentes).
 
 7. Regras `EV-*` em `.cursor/rules/*.mdc` só nas áreas tocadas pelo diff/SPEC.

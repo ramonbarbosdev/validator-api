@@ -8,6 +8,7 @@ Polish: mensagem HTTP, contrato documentado, padronização de JavaDoc. O usuár
 |---------|----------|
 | [`consumidor-api.md`](consumidor-api.md) | Resposta HTTP ao usuário (texto, `erro`, `path`) |
 | [`javadoc.md`](javadoc.md) | JavaDoc existente mas incompleto |
+| [`escopo-diff-pr.md`](escopo-diff-pr.md) | PR maior que a task (explicar em linguagem simples; não bloqueia) |
 
 ## Pré-requisito
 

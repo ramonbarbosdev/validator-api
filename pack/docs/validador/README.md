@@ -33,6 +33,7 @@ Cruzar **SPEC**, **diff** e **padrões** do projeto Java/Spring.
 
 - [`melhoria-ajuste/consumidor-api.md`](melhoria-ajuste/consumidor-api.md) — polish de resposta HTTP
 - [`melhoria-ajuste/javadoc.md`](melhoria-ajuste/javadoc.md) — padronização de JavaDoc
+- [`melhoria-ajuste/escopo-diff-pr.md`](melhoria-ajuste/escopo-diff-pr.md) — PR maior que a task (explicação em linguagem simples)
 
 ---
 

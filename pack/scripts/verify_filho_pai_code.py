@@ -84,13 +84,14 @@ def verify_report_vs_code(
 
     if _checklist_cites_child_as_fixed(report_body, child_names) and _report_claims_clean(report_body):
         errors.append(
-            "Relatorio marca checklist [x] citando controller do filho, mas o @RestController dedicado "
-            f"ainda existe ({listed}). Remover/mover para o controller do pai ou achado EV-MD-004 em Importante."
+            "NAO CORRIGIDO: relatorio marca [x] mas o controller dedicado do filho ainda existe "
+            f"({listed}). Exija achado em Importante com 'Nao corrigido' ou remova [x] falso."
         )
     elif _report_claims_clean(report_body):
         pairs = "; ".join(f"{p.child_class}→{p.parent_class}" for p in analysis.dedicated_children[:5])
         errors.append(
-            f"Padrao mestre-filho: controller dedicado do filho detectado ({listed}) — EV-MD-004 ({pairs}). "
-            "Importante/Critico nao podem ser so 'Nenhum.' sem justificativa na SPEC/PR."
+            f"NAO CORRIGIDO no codigo: {listed} (EV-MD-004; {pairs}). "
+            "Relatorio deve citar em Importante/Critico com 'Nao corrigido' ou Conferencia `- [ ]`, "
+            "nao 'Nenhum.'."
         )
     return errors

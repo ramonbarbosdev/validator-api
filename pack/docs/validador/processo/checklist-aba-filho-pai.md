@@ -40,7 +40,7 @@ Sem SPEC: inferir pelo card da PR / discussão humana; se ambíguo, achado **Imp
 
 Cada achado: regra (`EV-MD-*` ou doc), arquivo, método, impacto no **fluxo do usuário** (salvar, aba vazia, 422 inesperado).
 
-**Checklist `[x]` nao substitui o codigo:** marcar gap/EV-MD-004 como resolvido citando `EntidadeDependenteController` enquanto esse `@RestController` ainda existir e o padrao e sub-rota no `EntidadeController` e **falso positivo** — o CI (`verify_filho_pai_code.py`) reprova relatorio com Importante/Critico vazios. `[x]` em JavaDoc nao fecha EV-MD-004.
+**Checklist `[x]` nao substitui o codigo:** pendencia que **continua** deve aparecer como **`Não corrigido`** em Importante/Crítico ou `- [ ] **Não corrigido:**` na Conferência — nunca `[x]` falso. O CI reprova `Nenhum.` quando o codigo ainda viola EV-MD-* (`verify_filho_pai_code.py`).
 
 ## 6. Analise automatica (generica)
 

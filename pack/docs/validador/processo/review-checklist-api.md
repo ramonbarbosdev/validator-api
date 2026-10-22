@@ -70,6 +70,7 @@ Ative se SPEC, card ou diff citam **aba**, **vínculo**, **cliente superior**, s
 
 - [ ] **Primeiro:** [`critico/consumidor-api.md`](../critico/consumidor-api.md) + [`importante/consumidor-api.md`](../importante/consumidor-api.md) — loop login, tenant, contrato, 401/403, vazamento → **Crítico** / **Importante**.
 - [ ] **Depois:** [`melhoria-ajuste/consumidor-api.md`](../melhoria-ajuste/consumidor-api.md) — polish → **Melhoria / Ajuste** só se o fluxo conclui.
+- [ ] Task/issue/SPEC vs `git diff --stat`: patch muito maior que o pedido → [`melhoria-ajuste/escopo-diff-pr.md`](../melhoria-ajuste/escopo-diff-pr.md) (**Em linguagem simples**; não bloqueia).
 
 ## Encerramento
 

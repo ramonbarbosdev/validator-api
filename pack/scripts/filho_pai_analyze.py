@@ -259,15 +259,16 @@ def format_code_facts_markdown(analysis: FilhoPaiAnalysis) -> str:
         "## Fatos do codigo (mestre-filho, analise automatica)",
         "",
         "Use como evidencia obrigatoria; nao marque [x] nem `Nenhum.` em Importante se contradizer.",
+        "Se o item abaixo ainda existir, reporte **Nao corrigido** em Importante/Critico ou `- [ ] **Nao corrigido:**` na Conferencia.",
         "",
     ]
     if analysis.dedicated_children:
-        lines.append("### Controllers dedicados do filho (EV-MD-004)")
+        lines.append("### Nao corrigido no codigo (obrigatorio reportar se ainda assim)")
         for p in analysis.dedicated_children:
             nested = ", ".join(f"`{x}`" for x in p.parent_nested_paths[:4]) or "(nenhuma sub-rota `/{id}/…` no pai)"
             lines.append(
-                f"- **{p.child_class}** (`{p.child_rel}`) com pai **{p.parent_class}** — "
-                f"sub-rotas no pai: {nested}. Padrao: handlers no pai, nao `@RestController` so do filho."
+                f"- **Nao corrigido:** `{p.child_class}` ainda existe (`{p.child_rel}`) — EV-MD-004; "
+                f"pai **{p.parent_class}**; sub-rotas no pai: {nested}."
             )
         lines.append("")
     if analysis.aggregate_notes:

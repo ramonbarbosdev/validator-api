@@ -42,7 +42,7 @@ Conclusão: qualquer item em **Crítico** ou **Importante** → `NÃO APROVÁVEL
 
 
 
-Assumir front: **priorizar** defeitos em Crítico/Importante (`docs/validador/critico/consumidor-api.md`, `docs/validador/importante/consumidor-api.md`); Melhoria / Ajuste só para o que não bloqueia o usuário (`docs/validador/melhoria-ajuste/consumidor-api.md`).
+Assumir front: **priorizar** defeitos em Crítico/Importante (`docs/validador/critico/consumidor-api.md`, `docs/validador/importante/consumidor-api.md`); Melhoria / Ajuste para polish de API (`docs/validador/melhoria-ajuste/consumidor-api.md`) e para PR maior que a task (`docs/validador/melhoria-ajuste/escopo-diff-pr.md`, com **Em linguagem simples**).
 
 
 

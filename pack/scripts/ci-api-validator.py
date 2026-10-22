@@ -264,8 +264,8 @@ Comentario promete comportamento que o diff nao entrega, ou diff contradiz comen
     if pr_previous_report.strip():
         previous_rules = """
 **Relatorio anterior do validador (bloco abaixo):** regressao de achados (api-validator.md, secao Relatorio anterior).
-Para Critico/Importante do relatorio anterior: corrigido no diff -> nao repita em Critico/Importante; ainda violado -> cite com evidencia atual.
-Se Critico e Importante desta rodada ficarem `Nenhum.` e o relatorio anterior tinha itens: inclua secao `## Conferencia da rodada anterior` com `- [x] **titulo** — caminho/arquivo.java (como o diff fecha)` por ponto verificado (cite arquivos do diff).
+Para Critico/Importante do relatorio anterior: corrigido no diff -> nao repita; ainda violado -> **Importante/Critico** com **Nao corrigido** ou **Persiste** no titulo + evidencia, OU `- [ ] **Nao corrigido:**` na Conferencia.
+Se relatorio anterior tinha itens: Conferencia com `- [x]` so o que o diff fecha; **nunca** `[x]` se o codigo/fatos automaticos mostram pendencia. Fatos automaticos = tratar como nao corrigido.
 Nao reabra Melhoria resolvida; achados novos so com evidencia no diff/SPEC.
 """
         previous_block = f"\n{pr_previous_report.strip()}\n"
@@ -295,7 +295,7 @@ Saida EXATAMENTE nesta ordem, com estes titulos markdown (copie literal):
 ## Conferencia da rodada anterior
 (opcional: omita a secao inteira se nao houve relatorio anterior ou nao ha pontos a conferir; se usar, checklist `- [x]` dos itens da rodada anterior fechados neste diff, com caminhos de arquivo)
 ## Conclusao
-Assuma front/consumidor da API. **Prioridade:** em auth/erros/validacao/listagem autenticada, varra **Critico** e **Importante** com docs/validador/critico/consumidor-api.md e docs/validador/importante/consumidor-api.md (loop de login, tenant, contrato quebrado, 401 vs 403, vazamento). So depois preencha **Melhoria / Ajuste** (docs/validador/melhoria-ajuste/consumidor-api.md) para polish que NAO impede o usuario de concluir a tarefa. Melhoria NAO altera a Conclusao.
+Assuma front/consumidor da API. **Prioridade:** em auth/erros/validacao/listagem autenticada, varra **Critico** e **Importante** com docs/validador/critico/consumidor-api.md e docs/validador/importante/consumidor-api.md (loop de login, tenant, contrato quebrado, 401 vs 403, vazamento). So depois preencha **Melhoria / Ajuste**: polish de API (docs/validador/melhoria-ajuste/consumidor-api.md); se a task/issue/SPEC/titulo da PR pede UMA feature e o diff mistura refatoracao grande ou outro assunto, use docs/validador/melhoria-ajuste/escopo-diff-pr.md com campos **Em linguagem simples**, **Por que importa**, **Melhoria** (nao bloqueia Conclusao). Melhoria NAO altera a Conclusao.
 Na secao **Conclusao**, escreva **somente** uma linha: `Conclusao: APROVAVEL` ou `Conclusao: NAO APROVAVEL` — sem paragrafos, resumo do diff ou texto meta (ex. agente cloud, escopo, OK operacional).
 Regra: qualquer item em Critico ou Importante (alem de `Nenhum.`) -> `Conclusao: NAO APROVAVEL` (nunca APROVAVEL nem COM RESSALVAS).
 So `Nenhum.` em Critico e Importante -> `Conclusao: APROVAVEL`.

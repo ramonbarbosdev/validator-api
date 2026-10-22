@@ -12,6 +12,7 @@ Fluxo: **escopo primeiro**, achados **concretos**.
 6. [`review-checklist-api.md`](review-checklist-api.md)
 7. [`nao-reportar.md`](nao-reportar.md)
 8. Auth/erros no diff: [`../critico/consumidor-api.md`](../critico/consumidor-api.md) + [`../importante/consumidor-api.md`](../importante/consumidor-api.md) → depois [`../melhoria-ajuste/consumidor-api.md`](../melhoria-ajuste/consumidor-api.md)
+8b. Task vs patch: se issue/SPEC/título da PR definem **uma** feature e o `git diff --stat` mostra refatoração grande ou arquivos de outro assunto → [`../melhoria-ajuste/escopo-diff-pr.md`](../melhoria-ajuste/escopo-diff-pr.md) (**Melhoria / Ajuste**, texto legível).
 9. Relatório: **Crítico** / **Importante** / **Melhoria / Ajuste** / **Conclusão**
 
 Se existir [`revisao.overlay.md`](revisao.overlay.md) no projeto, **mesclar** com a tabela deste arquivo (vizinhos do domínio).

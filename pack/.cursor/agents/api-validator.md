@@ -44,11 +44,11 @@ Quando o prompt ou o sidecar traz **Relatório anterior do api-validator** (CI /
 
 1. **Ler após SPEC e discussão humana**, antes de fechar o veredito: o que estava em **Crítico** ou **Importante** na última publicação na PR.
 2. **Corrigido no diff atual** (evidência no código): **não repita** o mesmo achado; não liste só porque constava no relatório antigo.
-3. **Ainda violado** ou parcialmente corrigido: cite de novo com evidência no diff/SPEC atual (pode referir “persiste desde review anterior” em uma frase, sem copiar o texto inteiro).
+3. **Ainda violado** ou parcialmente corrigido: **obrigatório** em **Crítico** ou **Importante** com título ou primeira frase contendo **`Não corrigido`** ou **`Persiste`** (ex.: “**Não corrigido:** gap de agregado — …”) + evidência no código atual; não marque `[x]` na conferência para esse ponto.
 4. **Melhoria / Ajuste** do relatório anterior: repita só se o diff atual ainda merece; não reabra item já resolvido.
 5. **Achados novos** exigem evidência no diff/SPEC; o relatório anterior não autoriza inventar item sem verificação.
 6. Segurança crítica e tenant crítico continuam valendo mesmo que o relatório anterior tenha sido permissivo.
-7. **Sem achado novo em Crítico/Importante** e existindo relatório anterior com itens reais (não só `Nenhum.`): preencha **## Conferência da rodada anterior** com checklist `- [x]` por ponto do relatório anterior que o diff **corrige ou fecha**, cada linha com título curto + caminho de arquivo no diff. Não marque `[x]` sem evidência. Ponto ainda aberto volta em **Crítico** ou **Importante**, não na checklist. Se não houve relatório anterior ou não havia pendências, **omita** a seção.
+7. **Sem achado novo em Crítico/Importante** e existindo relatório anterior com itens reais (não só `Nenhum.`): preencha **## Conferência da rodada anterior** com `- [x]` só para pontos **realmente** fechados no diff; para cada pendência que **continua**, use `- [ ] **Não corrigido:** …**` com arquivo/evidência (ou mova o mesmo texto para **Importante**/**Crítico** com “Não corrigido”). **Fatos automáticos** no prompt que contradizem “tudo ok” → trate como **não corrigido**, nunca `[x]`. Se não houve relatório anterior ou não havia pendências, **omita** a seção.
 
 ## Fontes de verdade (não copiar o conteúdo para o relatório)
 
@@ -72,6 +72,7 @@ Quando o prompt ou o sidecar traz **Relatório anterior do api-validator** (CI /
 | Checklist operacional | `docs/validador/processo/review-checklist-api.md` | Seções que o diff/SPEC tocam |
 | Erros que bloqueiam o usuário (front) | `docs/validador/critico/consumidor-api.md`, `docs/validador/importante/consumidor-api.md` | **Antes** de Melhoria: classificar Crítico/Importante |
 | Resposta ao usuário (polish) | `docs/validador/melhoria-ajuste/consumidor-api.md` | Só o que **não** é defeito bloqueante |
+| PR maior que a task (patch misturado) | `docs/validador/melhoria-ajuste/escopo-diff-pr.md` | Após escopo + `git diff --stat`; **não** é “escopo ampliado” do validador |
 | Padrão C (listagem) + agregado pai/filho | `docs/padrao/colecao-filha-vinculada-pai.md` (se instalado) | Listagem enxuta; ver também `revisao.overlay.md` |
 | Nova aba / filho no cadastro | `docs/validador/processo/checklist-aba-filho-pai.md`, `EV-MD-*` | Diff ou SPEC/card com aba, vínculo, sub-rota `/{id}/…`; desvio (ex. controller só do filho) só se atividade/SPEC/discussão na PR justificar |
 | Validador inteligente (roteiro SPEC) | `docs/validador/processo/inteligente.md` | Sempre que houver SPEC ou escopo ampliado |
@@ -173,7 +174,7 @@ Endpoint novo `/.../dominio/...`: códigos persistidos sem validação em **nenh
 ## Consumidor da API (ordem obrigatória)
 
 1. **Crítico / Importante primeiro** — diff em auth, handlers, filtros, erros, listagens autenticadas: aplicar `docs/validador/critico/consumidor-api.md` e `docs/validador/importante/consumidor-api.md`. Loop de login, tenant errado, contrato que impede entrar no app, 401/403 enganoso com logout, vazamento em mensagem → **não** é Melhoria.
-2. **Melhoria / Ajuste depois** — polish de API ao usuário (`docs/validador/melhoria-ajuste/consumidor-api.md`) e **qualidade de JavaDoc** (`docs/validador/melhoria-ajuste/javadoc.md`).
+2. **Melhoria / Ajuste depois** — polish de API ao usuário (`docs/validador/melhoria-ajuste/consumidor-api.md`), **qualidade de JavaDoc** (`docs/validador/melhoria-ajuste/javadoc.md`) e **entrega maior que a task** (`docs/validador/melhoria-ajuste/escopo-diff-pr.md`) quando o patch mistura feature com refatoração/outro assunto — sempre com **Em linguagem simples** (não use só jargão “diff ampliado”).
 
 **Documentação no diff:** comentário `//` ou `/* */` **no corpo** do método → **Importante** (`EV-SVC-003`), nunca Melhoria. Classe/método público **novo** sem `/**` → **Importante** (`EV-SVC-002`). JavaDoc **presente** mas incompleto (resumo, `@param`, `@since`/`@author`) → **Melhoria / Ajuste**.
 
@@ -266,11 +267,24 @@ ou cada item (perspectiva usuário final via consumidor da API; ver docs/validad
 
 Itens de **JavaDoc** (padronização, tags faltando) usam o mesmo formato, com **Ajuste:** apontando para `docs/padrao/services.md` ou vizinho do módulo. **Não** colocar comentário inline no meio do código em Melhoria — isso é **Importante**.
 
+Itens de **PR maior que a task** (`docs/validador/melhoria-ajuste/escopo-diff-pr.md`) usam:
+
+* **Título objetivo** (ex.: “PR trouxe mais mudanças do que a task de …”)
+
+  * **Onde:** arquivos do patch + resumo do que mudou
+  * **O que a task pedia:** issue/SPEC/título/PR
+  * **O que veio a mais:** fora do pedido, com evidência
+  * **Para o usuário final:** em geral `N/A (revisão e manutenção)` se não há bug de tela
+  * **Em linguagem simples:** 2–4 frases para quem não leu o patch (sem acusar “código errado”; explicar entrega misturada)
+  * **Por que importa:** revisão, rollback, histórico
+  * **Melhoria:** separar entregas / PRs futuras
+
 ## Conferência da rodada anterior
 
 (Omitir se não houver relatório anterior ou pendências na rodada anterior.)
 
 - [x] **Título do achado anterior** — `src/.../Arquivo.java` (o que o diff fez)
+- [ ] **Não corrigido:** título do ponto que persistiu — `src/.../Arquivo.java` (evidência de que ainda falha)
 
 ## Conclusão
 
