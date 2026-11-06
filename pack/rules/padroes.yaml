@@ -1,0 +1,98 @@
+# Catalogo de padronizacoes executaveis pelo motor (pack/engine). Metadados de todas as regras EV-*: catalog.yaml.
+# Tipos: nomenclatura | declaracao_exige | comentarios | proibido | dependencia_proibida | par_obrigatorio | llm
+# Severidades: CRITICO | IMPORTANTE | MELHORIA. Use `ativa: false` para desligar uma regra sem apaga-la.
+# Prefixos de coluna: docs/padrao/nomenclatura-colunas-sql.md + prefixos ja estabelecidos no esimples-api (nu, qt, sg, pc).
+# Veja engine/GUIA.md para todos os campos.
+
+regras:
+  - id: EV-COM-001
+    tipo: comentarios
+    severidade: IMPORTANTE
+    arquivos: ["**/*.java"]
+    mensagem: Proibido comentario no codigo; apenas JavaDoc em declaracoes.
+    como_corrigir: Remova o comentario ou passe a informacao para o JavaDoc da declaracao.
+
+  - id: EV-DDL-002
+    tipo: nomenclatura
+    alvo: coluna_sql
+    severidade: IMPORTANTE
+    arquivos: ["**/db/**/*.sql"]
+    padrao: '(id|nm|ds|fl|dt|vl|tp|cd|nu|qt|sg|pc)_[a-z0-9]+'
+    mensagem: Coluna deve seguir <prefixo>_<tudojunto>.
+    como_corrigir: Renomeie a coluna, por exemplo para nm_razaosocial.
+
+  - id: EV-DDL-003
+    tipo: nomenclatura
+    alvo: coluna_jpa
+    severidade: IMPORTANTE
+    arquivos: ["**/*.java"]
+    padrao: '(id|nm|ds|fl|dt|vl|tp|cd|nu|qt|sg|pc)_[a-z0-9]+'
+    mensagem: '@Column/@JoinColumn deve seguir <prefixo>_<tudojunto>.'
+    como_corrigir: Alinhe o name da anotacao com a coluna da migration.
+
+  - id: EV-SVC-002
+    tipo: declaracao_exige
+    alvo: metodo
+    severidade: IMPORTANTE
+    arquivos: ["**/service/**/*.java"]
+    quando: {visibilidade: public}
+    exige: [{javadoc: true}]
+    mensagem: Metodo publico novo em service exige JavaDoc.
+    como_corrigir: Adicione JavaDoc (/** ... */) imediatamente antes do metodo.
+
+  - id: EV-REST-002
+    tipo: declaracao_exige
+    alvo: parametro
+    severidade: IMPORTANTE
+    arquivos: ["**/controller/**/*.java"]
+    quando: {anotada_com: [RequestBody]}
+    exige: [{anotacao: Valid}]
+    mensagem: '@RequestBody exige @Valid.'
+    como_corrigir: Adicione @Valid ao parametro.
+
+  - id: EV-CTL-004
+    tipo: declaracao_exige
+    alvo: metodo
+    severidade: IMPORTANTE
+    arquivos: ["**/controller/**/*.java"]
+    exige: [{sem_anotacao: Transactional}]
+    mensagem: Controller nao usa @Transactional.
+    como_corrigir: Mova a transacao para o service.
+
+  - id: EV-CTL-002
+    tipo: dependencia_proibida
+    severidade: IMPORTANTE
+    arquivos: ["**/controller/**/*.java"]
+    importa: '\.repository\.|jakarta\.persistence\.EntityManager|org\.springframework\.jdbc\.core\.'
+    mensagem: Controller nao acessa repository, EntityManager nem JdbcTemplate.
+    como_corrigir: Chame o service.
+
+  - id: EV-NOM-001
+    tipo: nomenclatura
+    alvo: url_segmento
+    severidade: MELHORIA
+    arquivos: ["**/controller/**/*.java"]
+    padrao: '[a-z0-9]+(-[a-z0-9]+)*'
+    mensagem: Segmentos de URL em kebab-case.
+    como_corrigir: Renomeie o segmento da rota.
+
+  - id: EV-PER-004
+    tipo: nomenclatura
+    alvo: arquivo
+    severidade: IMPORTANTE
+    arquivos: ["**/db/migration/*.sql", "**/db/central/*.sql"]
+    padrao: 'V\d+(\.\d+)*__[a-z0-9_]+\.sql'
+    mensagem: Migration nova deve se chamar V{N}__descricao.sql (minusculas, sem espacos).
+    como_corrigir: Renomeie o arquivo, por exemplo V130__adiciona_coluna_contrato.sql.
+
+  - id: EV-REU-001
+    tipo: llm
+    severidade: IMPORTANTE
+    arquivos: ["**/*.java"]
+    descricao: Reutilizar componentes shared, specs e mappers existentes em vez de criar duplicatas.
+
+  - id: EV-ESP-001
+    tipo: llm
+    severidade: IMPORTANTE
+    arquivos: ["**/*.java", "**/*.sql"]
+    descricao: Os docs/*.md da feature devem estar consistentes com o codigo alterado.

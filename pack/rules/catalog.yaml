@@ -1,12 +1,13 @@
 # Catalogo de regras: fonte unica para scripts, prompt e gate.
 # tipo: estatico (script decide) | semi (script extrai fatos, LLM decide) | semantico (LLM decide)
-# status: ativo (padrao quando ausente e ha check) | pendente (check previsto, ainda sem script) | substituida
+# status: ativo (padrao quando ausente e ha check) | pendente (check previsto, ainda sem regra no motor) | substituida
+# check: rules/padroes.yaml#<id> = regra executada pelo motor declarativo (pack/engine)
 regras:
   - id: EV-COM-001
     severidade: IMPORTANTE
     tipo: estatico
     aplica_a: ["**/*.java"]
-    check: checks/check_comentarios.py
+    check: rules/padroes.yaml#EV-COM-001
     descricao: Proibido comentario (// ou /* */) em qualquer parte do codigo Java; apenas JavaDoc.
     como_corrigir: Remover o comentario ou migrar a informacao para JavaDoc da declaracao.
     substitui: EV-SVC-003   # a antiga cobria so service/controller/security e so dentro de metodo
@@ -14,10 +15,18 @@ regras:
   - id: EV-DDL-002
     severidade: IMPORTANTE
     tipo: estatico
-    aplica_a: ["**/db/**/*.sql", "**/*.java"]
-    check: checks/check_nomenclatura_db.py
-    descricao: Colunas de banco no formato <prefixo>_<tudojunto> (prefixos em rules/nomenclatura-db.json).
+    aplica_a: ["**/db/**/*.sql"]
+    check: rules/padroes.yaml#EV-DDL-002
+    descricao: Colunas de banco no formato <prefixo>_<tudojunto> (prefixos em rules/padroes.yaml).
     como_corrigir: Renomear a coluna (migration e @Column/@JoinColumn) para o padrao.
+
+  - id: EV-DDL-003
+    severidade: IMPORTANTE
+    tipo: estatico
+    aplica_a: ["**/*.java"]
+    check: rules/padroes.yaml#EV-DDL-003
+    descricao: "@Column/@JoinColumn com name no formato <prefixo>_<tudojunto> (mesmos prefixos de EV-DDL-002)."
+    como_corrigir: Alinhar o name da anotacao com a coluna da migration.
 
   - id: EV-ARC-001
     severidade: CRITICO
@@ -64,8 +73,7 @@ regras:
   - id: EV-CTL-002
     severidade: IMPORTANTE
     tipo: estatico
-    check: checks/check_controller_injecao.py
-    status: pendente
+    check: rules/padroes.yaml#EV-CTL-002
     descricao: Controller nao injeta *Repository, EntityManager nem JdbcTemplate (codigo novo no diff).
     fonte: .cursor/rules/ev-controllers.mdc
 
@@ -78,8 +86,7 @@ regras:
   - id: EV-CTL-004
     severidade: IMPORTANTE
     tipo: estatico
-    check: checks/check_controller_transactional.py
-    status: pendente
+    check: rules/padroes.yaml#EV-CTL-004
     descricao: Sem @Transactional no controller (EV-TXN-003).
     fonte: .cursor/rules/ev-controllers.mdc
 
@@ -231,8 +238,7 @@ regras:
   - id: EV-NOM-001
     severidade: MELHORIA
     tipo: estatico
-    check: checks/check_url_kebab.py
-    status: pendente
+    check: rules/padroes.yaml#EV-NOM-001
     descricao: URL kebab-case; permissao = segmento.
     fonte: .cursor/rules/project-conventions.mdc
 
@@ -275,9 +281,8 @@ regras:
   - id: EV-PER-004
     severidade: IMPORTANTE
     tipo: estatico
-    check: checks/check_migration_versionada.py
-    status: pendente
-    descricao: Migration V{N}__descricao.sql; correcao = nova migration (nao editar/apagar V*.sql versionada).
+    check: rules/padroes.yaml#EV-PER-004
+    descricao: Migration V{N}__descricao.sql; correcao = nova migration (o motor confere so o nome do arquivo novo).
     fonte: .cursor/rules/persistence.mdc
 
   - id: EV-PER-005
@@ -312,8 +317,9 @@ regras:
 
   - id: EV-REST-002
     severidade: IMPORTANTE
-    tipo: semi
-    descricao: "@Valid em body de escrita com constraints."
+    tipo: estatico
+    check: rules/padroes.yaml#EV-REST-002
+    descricao: "@Valid em body de escrita (@RequestBody) com constraints."
     fonte: .cursor/rules/rest-api.mdc
 
   - id: EV-REST-003
@@ -415,8 +421,7 @@ regras:
   - id: EV-SVC-002
     severidade: IMPORTANTE
     tipo: estatico
-    check: checks/check_javadoc_publico.py
-    status: pendente
+    check: rules/padroes.yaml#EV-SVC-002
     descricao: Classe *Service nova ou metodos publicos novos com JavaDoc.
     fonte: .cursor/rules/ev-services.mdc
 
@@ -437,7 +442,7 @@ regras:
   - id: EV-SVC-005
     severidade: MELHORIA
     tipo: estatico
-    check: checks/check_javadoc_tags.py
+    check: rules/padroes.yaml#EV-SVC-005
     status: pendente
     descricao: "@author e @since nos JavaDocs de metodos publicos novos."
     fonte: .cursor/rules/ev-services.mdc
@@ -493,8 +498,8 @@ regras:
   - id: EV-TXN-003
     severidade: MELHORIA
     tipo: estatico
-    check: checks/check_controller_transactional.py
-    status: pendente
+    status: substituida
+    substituida_por: EV-CTL-004
     descricao: Sem @Transactional no controller.
     fonte: .cursor/rules/persistence.mdc
 

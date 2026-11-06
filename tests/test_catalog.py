@@ -8,8 +8,9 @@ from rules_catalog import (
     SEVERIDADES,
     TIPOS,
     active_static_rules,
-    check_path,
+    check_exists,
     load_catalog,
+    load_padroes,
     rule_status,
 )
 
@@ -41,21 +42,22 @@ def test_catalogo_sem_ids_duplicados():
 def test_check_ativo_aponta_para_arquivo_real():
     for r in load_catalog():
         if r.get("check") and rule_status(r) == "ativo":
-            assert check_path(r).is_file(), f"{r['id']}: {r['check']}"
+            assert check_exists(r), f"{r['id']}: {r['check']}"
 
 
-def test_estatico_sem_script_marcado_pendente():
+def test_estatico_sem_regra_no_motor_marcado_pendente():
     for r in load_catalog():
         if r.get("tipo") != "estatico" or rule_status(r) == "substituida":
             continue
         assert r.get("check"), r["id"]
-        if not check_path(r).is_file():
+        if not check_exists(r):
             assert rule_status(r) == "pendente", r["id"]
 
 
-def test_ev_svc_003_substituida_por_ev_com_001():
-    regra = next(r for r in load_catalog() if r["id"] == "EV-SVC-003")
-    assert regra.get("substituida_por") == "EV-COM-001"
+def test_substituicoes():
+    por_id = {r["id"]: r for r in load_catalog()}
+    assert por_id["EV-SVC-003"].get("substituida_por") == "EV-COM-001"
+    assert por_id["EV-TXN-003"].get("substituida_por") == "EV-CTL-004"
 
 
 def test_todas_as_regras_das_fontes_estao_no_catalogo():
@@ -63,6 +65,19 @@ def test_todas_as_regras_das_fontes_estao_no_catalogo():
     assert not faltando, sorted(faltando)
 
 
+def test_regras_estaticas_do_motor_estao_no_catalogo_com_mesma_severidade():
+    catalogo = {r["id"]: r for r in load_catalog()}
+    for p in load_padroes():
+        if p.get("tipo") == "llm" or not p.get("ativa", True):
+            continue
+        assert p["id"] in catalogo, p["id"]
+        assert catalogo[p["id"]]["severidade"] == p["severidade"], p["id"]
+        assert catalogo[p["id"]].get("check") == f"rules/padroes.yaml#{p['id']}", p["id"]
+
+
 def test_regras_estaticas_ativas():
-    ids = [r["id"] for r in active_static_rules(load_catalog())]
-    assert ids == ["EV-COM-001", "EV-DDL-002"]
+    ids = sorted(r["id"] for r in active_static_rules(load_catalog()))
+    assert ids == sorted(
+        ["EV-COM-001", "EV-DDL-002", "EV-DDL-003", "EV-SVC-002", "EV-CTL-002",
+         "EV-CTL-004", "EV-NOM-001", "EV-PER-004", "EV-REST-002"]
+    )
