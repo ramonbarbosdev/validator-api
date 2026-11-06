@@ -10,7 +10,7 @@ import pytest
 ROOT = Path(__file__).resolve().parent.parent
 PACK = ROOT / "pack"
 
-for _p in (PACK / "scripts", PACK / "checks", ROOT / "src"):
+for _p in (PACK, PACK / "scripts", ROOT / "src"):
     if str(_p) not in sys.path:
         sys.path.insert(0, str(_p))
 
@@ -30,6 +30,7 @@ class GitRepo:
     def __init__(self, path: Path, base: str = "develop") -> None:
         self.path = path
         self.base = base
+        path.mkdir(parents=True, exist_ok=True)
         _git(path, "init", "-q", "-b", base)
         _git(path, "config", "user.email", "teste@example.com")
         _git(path, "config", "user.name", "Teste")
@@ -37,6 +38,7 @@ class GitRepo:
         (path / "README.md").write_text("base\n", encoding="utf-8")
         self.commit("base")
         _git(path, "update-ref", f"refs/remotes/origin/{base}", "HEAD")
+        _git(path, "checkout", "-qb", "feature")
 
     def write(self, rel: str, content: str) -> None:
         """Grava arquivo relativo ao repo (cria pastas)."""
@@ -50,11 +52,29 @@ class GitRepo:
         _git(self.path, "commit", "-q", "--allow-empty", "-m", message)
         return _git(self.path, "rev-parse", "HEAD").strip()
 
+    def marcar_base(self) -> None:
+        """Move `origin/<base>` para o HEAD atual."""
+        _git(self.path, "update-ref", f"refs/remotes/origin/{self.base}", "HEAD")
+
     def git(self, *args: str) -> str:
         return _git(self.path, *args)
 
 
 @pytest.fixture
 def git_repo(tmp_path: Path) -> GitRepo:
-    """Repo git com base `develop` publicada como `origin/develop`."""
+    """Repo git com base `develop` publicada como `origin/develop`, em branch `feature`."""
     return GitRepo(tmp_path / "api")
+
+
+@pytest.fixture
+def novo_repo(git_repo: GitRepo):
+    """Funcao que aplica um PR (dict arquivo->conteudo) e devolve o caminho do repo."""
+
+    def pr(arquivos: dict[str, str]) -> Path:
+        for caminho, conteudo in arquivos.items():
+            git_repo.write(caminho, conteudo)
+        git_repo.commit("pr")
+        return git_repo.path
+
+    pr.marcar_base = git_repo.marcar_base
+    return pr
