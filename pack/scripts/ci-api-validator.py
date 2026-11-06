@@ -23,6 +23,7 @@ from report_quality import (  # noqa: E402
     previous_report_had_findings,
 )
 from filho_pai_analyze import analyze_repo, format_code_facts_markdown  # noqa: E402
+from run_static_checks import run_and_write, static_checks_enabled  # noqa: E402
 from scope_filho_pai import (  # noqa: E402
     filho_pai_prompt_block,
     should_apply_filho_pai_checklist,
@@ -196,6 +197,73 @@ def git_diff_names(root: Path, base: str) -> list[str]:
     return []
 
 
+STATIC_BLOCK_TITLE = (
+    "## ACHADOS ESTATICOS CONFIRMADOS (nao reanalise; nao os omita; pode complementa-los)"
+)
+LEGACY_COMMENT_RULE = (
+    "No diff em service/controller/security: comentario // ou /* dentro de metodo -> **Importante** (EV-SVC-003); "
+    "metodo publico novo sem JavaDoc -> **Importante** (EV-SVC-002); JavaDoc presente mas fora do padrao "
+    "(docs/validador/melhoria-ajuste/javadoc.md) -> **Melhoria / Ajuste**."
+)
+
+
+def format_static_findings_block(resultado: dict | None) -> str:
+    """Bloco do prompt com os achados do motor estatico (findings-estaticos.json)."""
+    if not resultado:
+        return ""
+    lines = [
+        STATIC_BLOCK_TITLE,
+        "Verificados por script (pack/engine + rules/padroes.yaml). Cada item entra no relatorio na secao "
+        "da severidade (CRITICO -> Critico, IMPORTANTE -> Importante, MELHORIA -> Melhoria / Ajuste); "
+        "se voce omitir, o CI insere automaticamente.",
+        "",
+    ]
+    achados = resultado.get("achados") or []
+    if achados:
+        for a in achados:
+            lines.append(
+                f"- **{a.get('id')}** ({a.get('severidade')}) `{a.get('arquivo')}:{a.get('linha')}` — "
+                f"{a.get('evidencia')}. Correcao: {a.get('como_corrigir') or '-'}"
+            )
+    else:
+        lines.append("Nenhum achado estatico nas linhas adicionadas.")
+    executadas = resultado.get("regras_executadas") or []
+    if executadas:
+        lines += ["", "Regras verificadas por script (nao reanalise): " + ", ".join(executadas) + "."]
+    falhas = resultado.get("falhas_de_regra") or []
+    if falhas:
+        ids = ", ".join(str(f.get("id")) for f in falhas)
+        lines += ["", f"Regras cujo script falhou ({ids}): avalie manualmente como antes."]
+    llm = resultado.get("regras_llm_aplicaveis") or []
+    if llm:
+        lines += ["", "Regras semanticas aplicaveis a este diff (voce decide, com evidencia):"]
+        lines += [f"- **{r.get('id')}**: {r.get('descricao')}" for r in llm]
+    return "\n".join(lines) + "\n"
+
+
+def _static_rules_instruction(resultado: dict) -> str:
+    executadas = set(resultado.get("regras_executadas") or [])
+    if "EV-COM-001" not in executadas:
+        return LEGACY_COMMENT_RULE
+    if "EV-SVC-002" in executadas:
+        verificadas = (
+            "Comentarios no codigo (EV-COM-001, substitui EV-SVC-003), nomenclatura de colunas "
+            "(EV-DDL-002/EV-DDL-003) e metodo publico novo em service sem JavaDoc (EV-SVC-002)"
+        )
+        javadoc = "Em controller/security, metodo publico novo sem JavaDoc continua **Importante** (EV-SVC-002)."
+    else:
+        verificadas = (
+            "Comentarios no codigo (EV-COM-001, substitui EV-SVC-003) e nomenclatura de colunas "
+            "(EV-DDL-002/EV-DDL-003)"
+        )
+        javadoc = "Metodo publico novo sem JavaDoc -> **Importante** (EV-SVC-002)."
+    return (
+        f"{verificadas} sao verificados por script: use o bloco ACHADOS ESTATICOS CONFIRMADOS, "
+        f"nao reanalise. {javadoc} JavaDoc presente mas fora do padrao "
+        "(docs/validador/melhoria-ajuste/javadoc.md) -> **Melhoria / Ajuste**."
+    )
+
+
 def build_prompt(
     root: Path,
     base: str,
@@ -209,7 +277,9 @@ def build_prompt(
     filho_pai_checklist: bool = False,
     filho_pai_code_facts: str = "",
     changed_files: list[str] | None = None,
+    static_findings: dict | None = None,
 ) -> str:
+    """Prompt do agente; `static_findings=None` reproduz o prompt anterior aos checks estaticos."""
     agent_rel = ".cursor/agents/api-validator.md"
     validator_url = validator_repo_url()
 
@@ -275,6 +345,12 @@ Nao reabra Melhoria resolvida; achados novos so com evidencia no diff/SPEC.
     if filho_pai_code_facts.strip():
         code_facts_block = f"\n{filho_pai_code_facts.strip()}\n"
 
+    static_block = ""
+    comment_rule = LEGACY_COMMENT_RULE
+    if static_findings is not None:
+        static_block = f"\n{format_static_findings_block(static_findings).strip()}\n"
+        comment_rule = _static_rules_instruction(static_findings)
+
     return f"""Voce e o revisor api-validator do esimples-api (Java Spring Boot).
 
 {discussion_rules}{previous_rules}{filho_pai_block}
@@ -299,14 +375,14 @@ Assuma front/consumidor da API. **Prioridade:** em auth/erros/validacao/listagem
 Na secao **Conclusao**, escreva **somente** uma linha: `Conclusao: APROVAVEL` ou `Conclusao: NAO APROVAVEL` — sem paragrafos, resumo do diff ou texto meta (ex. agente cloud, escopo, OK operacional).
 Regra: qualquer item em Critico ou Importante (alem de `Nenhum.`) -> `Conclusao: NAO APROVAVEL` (nunca APROVAVEL nem COM RESSALVAS).
 So `Nenhum.` em Critico e Importante -> `Conclusao: APROVAVEL`.
-No diff em service/controller/security: comentario // ou /* dentro de metodo -> **Importante** (EV-SVC-003); metodo publico novo sem JavaDoc -> **Importante** (EV-SVC-002); JavaDoc presente mas fora do padrao (docs/validador/melhoria-ajuste/javadoc.md) -> **Melhoria / Ajuste**.
+{comment_rule}
 Sem achado tecnico: Critico e Importante = `Nenhum.`; Melhoria / Ajuste = `Nenhum.` ou itens de UX de API / JavaDoc.
 **Proibido** entregar so o esqueleto (todas as secoes `Nenhum.` sem texto): voce DEVE ler o diff (`git diff origin/{base}...HEAD`) e citar **pelo menos dois** caminhos de arquivo do diff (ex. `src/main/java/.../Foo.java`) — em achado ou em 1-2 frases objetivas do que mudou (ex. em Melhoria). Sem isso o CI rejeita o relatorio.
 A secao **## Conclusao** e obrigatoria (uma linha `Conclusao: APROVAVEL` ou `Conclusao: NAO APROVAVEL`).
 
 git diff --stat (referencia local do disparo):
 {stat}
-{files_block}{discussion_block}{previous_block}{code_facts_block}
+{files_block}{discussion_block}{previous_block}{code_facts_block}{static_block}
 """
 
 
@@ -415,6 +491,13 @@ def main() -> int:
             file=sys.stderr,
         )
 
+    static_findings = None
+    if static_checks_enabled():
+        try:
+            static_findings = run_and_write(base, root)
+        except Exception as e:
+            print(f"AVISO: checks estaticos falharam ({e}); seguindo sem eles.", file=sys.stderr)
+
     model = os.environ.get("CURSOR_VALIDATOR_MODEL", "composer-2.5")
     prompt = build_prompt(
         root,
@@ -428,6 +511,7 @@ def main() -> int:
         filho_pai_checklist=filho_pai_checklist,
         filho_pai_code_facts=filho_pai_code_facts,
         changed_files=changed_files,
+        static_findings=static_findings,
     )
 
     if runtime == "cloud":

@@ -178,6 +178,8 @@ Endpoint novo `/.../dominio/...`: códigos persistidos sem validação em **nenh
 
 **Documentação no diff:** comentário `//` ou `/* */` **no corpo** do método → **Importante** (`EV-SVC-003`), nunca Melhoria. Classe/método público **novo** sem `/**` → **Importante** (`EV-SVC-002`). JavaDoc **presente** mas incompleto (resumo, `@param`, `@since`/`@author`) → **Melhoria / Ajuste**.
 
+**Regras verificadas por script (CI):** quando o prompt trouxer o bloco **ACHADOS ESTATICOS CONFIRMADOS**, as regras que ele lista como verificadas por script **não** são reanalisadas por você — comentário em Java (`EV-COM-001`, que substitui `EV-SVC-003` e vale para **qualquer** `//` ou `/* */`, não só no corpo de método), nomenclatura de colunas (`EV-DDL-002` SQL, `EV-DDL-003` `@Column`/`@JoinColumn`) e as demais do bloco. Copie cada achado do bloco na seção da severidade (o CI insere o que faltar e recalcula a Conclusão) e concentre a análise nas regras semânticas. Sem esse bloco (checks desligados ou `/api-validator` manual), aplique o parágrafo acima como antes. Regras: `rules/padroes.yaml` do pacote validador.
+
 Se em dúvida entre Importante e Melhoria (UX): *o usuário consegue terminar a tarefa principal sem workaround no front?* Não → **Importante**. Sim, mas confuso → Melhoria.
 
 ## O que nunca é achado (Crítico / Importante)

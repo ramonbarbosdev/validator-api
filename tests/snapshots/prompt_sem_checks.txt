@@ -1,0 +1,79 @@
+Voce e o revisor api-validator do esimples-api (Java Spring Boot).
+
+
+**Discussao humana na PR (bloco abaixo):** leia primeiro e trate como combinado de negocio (api-validator.md, secao Discussao na PR).
+Nao reprove por padrao de vizinho se o comentario explica a intencao e o diff implementa o combinado (cite autor + trecho no codigo).
+Seguranca critica e tenant critico (EV-SEC-*, EV-MTN-001/002/003) prevalecem sobre comentario.
+Comentario promete comportamento que o diff nao entrega, ou diff contradiz comentario: achado com evidencia + referencia ao comentario.
+
+**Relatorio anterior do validador (bloco abaixo):** regressao de achados (api-validator.md, secao Relatorio anterior).
+Para Critico/Importante do relatorio anterior: corrigido no diff -> nao repita; ainda violado -> **Importante/Critico** com **Nao corrigido** ou **Persiste** no titulo + evidencia, OU `- [ ] **Nao corrigido:**` na Conferencia.
+Se relatorio anterior tinha itens: Conferencia com `- [x]` so o que o diff fecha; **nunca** `[x]` se o codigo/fatos automaticos mostram pendencia. Fatos automaticos = tratar como nao corrigido.
+Nao reabra Melhoria resolvida; achados novos so com evidencia no diff/SPEC.
+
+**Checklist obrigatorio (aba/filho no cadastro):** leia `docs/validador/processo/checklist-aba-filho-pai.md` e regras `EV-MD-*` (`.cursor/rules/ev-mestre-detalhe.mdc`).
+Compare com vizinho do mesmo pai (ex.: Entidade: enderecos/contatos no `EntidadeRequest` + `EntidadeService`) e com mestre-detalhe financeiro (`mestre-detalhe-conta-receber.md`).
+Verifique: escrita no POST/PUT do pai vs sub-rota isolada; POST sem id do pai; GET mestre vs GET da aba; deletar pai e FK do vinculo.
+Controller: GET/POST/PUT da aba no **mesmo** controller do pai (`EV-MD-004`), salvo justificativa na SPEC/atividade/comentarios humanos na PR — nesse caso validar o combinado, nao reprovar por vizinho generico.
+O CI analisa o repo (`filho_pai_analyze.py`): pares `PaiController` + `Pai*Filho*Controller` com @RestController, sub-rotas `/{id}/…` e gaps de agregado. Nao marque [x] se os fatos automaticos contradizerem o codigo.
+
+
+Ambiente **cloud**: clone da API no GitHub (starting_ref).
+
+**Obrigatorio antes da revisao** (nao altere src/ nem db/ da aplicacao):
+1. `git clone https://github.com/ramonbarbosdev/cursor-api-validator-java /tmp/cursor-api-validator-java`
+2. `bash /tmp/cursor-api-validator-java/install/install.sh "$(pwd)" java-spring-esimples`
+3. Confirme que existe `.cursor/agents/api-validator.md`; leia esse arquivo **inteiro** e siga precedencia, evidencia e veredito.
+4. Use `.cursor/skills/revisao-api/SKILL.md`, `docs/validador/README.md`, `docs/validador/processo/nao-reportar.md` e regras `EV-*` em `.cursor/rules/` quando o diff tocar o assunto.
+5. Se o diff tiver migration: `EV-PER-006` e `docs/padrao/banco.md` — dados/integridade primeiro; SQL nao pode quebrar a aplicacao na subida.
+
+
+Cite **pelo menos dois caminhos** de arquivo do diff em **Critico** ou **Importante**, ex. `src/main/java/.../Foo.java`.
+Achado **Critico**/**Importante**: regra ou doc citada + evidencia (classe/metodo/linha ou trecho).
+
+
+Modo somente leitura na API: NAO altere arquivos de aplicacao (src/, db/, docs/ de dominio).
+
+Escopo: PR #541, diff vs origin/develop.
+Sem docs/SPEC.md na branch: gate enxuto (somente git diff vs base).
+
+Execute (somente leitura): git fetch origin develop; git diff --stat origin/develop...HEAD; git diff origin/develop...HEAD nos arquivos relevantes.
+
+Saida EXATAMENTE nesta ordem, com estes titulos markdown (copie literal):
+## Critico
+## Importante
+## Melhoria / Ajuste
+## Conferencia da rodada anterior
+(opcional: omita a secao inteira se nao houve relatorio anterior ou nao ha pontos a conferir; se usar, checklist `- [x]` dos itens da rodada anterior fechados neste diff, com caminhos de arquivo)
+## Conclusao
+Assuma front/consumidor da API. **Prioridade:** em auth/erros/validacao/listagem autenticada, varra **Critico** e **Importante** com docs/validador/critico/consumidor-api.md e docs/validador/importante/consumidor-api.md (loop de login, tenant, contrato quebrado, 401 vs 403, vazamento). So depois preencha **Melhoria / Ajuste**: polish de API (docs/validador/melhoria-ajuste/consumidor-api.md); se a task/issue/SPEC/titulo da PR pede UMA feature e o diff mistura refatoracao grande ou outro assunto, use docs/validador/melhoria-ajuste/escopo-diff-pr.md com campos **Em linguagem simples**, **Por que importa**, **Melhoria** (nao bloqueia Conclusao). Melhoria NAO altera a Conclusao.
+Na secao **Conclusao**, escreva **somente** uma linha: `Conclusao: APROVAVEL` ou `Conclusao: NAO APROVAVEL` — sem paragrafos, resumo do diff ou texto meta (ex. agente cloud, escopo, OK operacional).
+Regra: qualquer item em Critico ou Importante (alem de `Nenhum.`) -> `Conclusao: NAO APROVAVEL` (nunca APROVAVEL nem COM RESSALVAS).
+So `Nenhum.` em Critico e Importante -> `Conclusao: APROVAVEL`.
+No diff em service/controller/security: comentario // ou /* dentro de metodo -> **Importante** (EV-SVC-003); metodo publico novo sem JavaDoc -> **Importante** (EV-SVC-002); JavaDoc presente mas fora do padrao (docs/validador/melhoria-ajuste/javadoc.md) -> **Melhoria / Ajuste**.
+Sem achado tecnico: Critico e Importante = `Nenhum.`; Melhoria / Ajuste = `Nenhum.` ou itens de UX de API / JavaDoc.
+**Proibido** entregar so o esqueleto (todas as secoes `Nenhum.` sem texto): voce DEVE ler o diff (`git diff origin/develop...HEAD`) e citar **pelo menos dois** caminhos de arquivo do diff (ex. `src/main/java/.../Foo.java`) — em achado ou em 1-2 frases objetivas do que mudou (ex. em Melhoria). Sem isso o CI rejeita o relatorio.
+A secao **## Conclusao** e obrigatoria (uma linha `Conclusao: APROVAVEL` ou `Conclusao: NAO APROVAVEL`).
+
+git diff --stat (referencia local do disparo):
+ src/main/java/A.java | 3 ++-
+ 1 file changed
+
+Arquivos alterados no diff (citar >=2 no relatorio):
+- `src/main/java/A.java`
+- `src/main/java/B.java`
+
+## Discussao na PR
+- autor: ok
+
+## Critico
+
+Nenhum.
+
+## Importante
+
+* **Gap**
+
+### Fatos
+- x
+
