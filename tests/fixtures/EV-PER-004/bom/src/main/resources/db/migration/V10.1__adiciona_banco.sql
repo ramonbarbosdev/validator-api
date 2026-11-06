@@ -1,0 +1,1 @@
+CREATE TABLE banco (id_banco BIGSERIAL PRIMARY KEY);

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import pytest
+
 from _ci_module import SNAPSHOT, build_default_prompt, load_ci_module, prompt_kwargs
 
 

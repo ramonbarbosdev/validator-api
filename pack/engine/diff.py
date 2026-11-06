@@ -6,7 +6,10 @@ HUNK = re.compile(r"^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@")
 
 
 def _git(repo, *args):
-    return subprocess.run(["git", "-C", str(repo), *args], capture_output=True, text=True, check=True).stdout
+    return subprocess.run(
+        ["git", "-C", str(repo), "-c", "core.quotepath=false", *args],
+        capture_output=True, text=True, encoding="utf-8", check=True,
+    ).stdout
 
 
 def linhas_adicionadas(base, repo="."):
@@ -15,7 +18,8 @@ def linhas_adicionadas(base, repo="."):
     res, arq, n = {}, None, 0
     for linha in saida.splitlines():
         if linha.startswith("+++ "):
-            arq = None if linha.endswith("/dev/null") else linha[6:]
+            alvo = linha[4:].rstrip("\t")
+            arq = None if alvo == "/dev/null" else alvo[2:]
             if arq:
                 res.setdefault(arq, set())
         elif linha.startswith("@@"):

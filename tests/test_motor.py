@@ -1,5 +1,6 @@
-from engine.motor import carregar_regras, executar, validar_regras
 from pathlib import Path
+
+from engine.motor import carregar_regras, executar, validar_regras
 
 
 def rodar(repo, *regras):

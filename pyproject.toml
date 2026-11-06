@@ -16,10 +16,33 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["ruff>=0.6"]
+dev = ["pytest>=8.0", "ruff>=0.6"]
 
 [project.scripts]
 validator-api = "validator_api.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+include = [
+  "pack/engine/**/*.py",
+  "pack/scripts/rules_catalog.py",
+  "pack/scripts/run_static_checks.py",
+  "pack/scripts/merge_static_findings.py",
+  "pack/scripts/backtest.py",
+  "tests/**/*.py",
+]
+extend-exclude = ["tests/fixtures"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B"]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["validator_api", "engine", "rules_catalog", "run_static_checks", "merge_static_findings", "report_quality", "backtest", "conftest", "_ci_module"]

@@ -7,10 +7,10 @@ import subprocess
 import sys
 
 import pytest
+
 from conftest import PACK
 from merge_static_findings import compute_verdict, merge
 from report_quality import parse_conclusion_verdict, report_sections, section_has_findings
-
 from validator_api.report_gate import needs_block_label
 
 REPORT_COM_IMPORTANTE = """<!-- review -->
