@@ -1,5 +1,6 @@
 # Catalogo de regras: fonte unica para scripts, prompt e gate.
-# tipo: estatico (script decide) | semantico (LLM decide)
+# tipo: estatico (script decide) | semi (script extrai fatos, LLM decide) | semantico (LLM decide)
+# status: ativo (padrao quando ausente e ha check) | pendente (check previsto, ainda sem script) | substituida
 regras:
   - id: EV-COM-001
     severidade: IMPORTANTE
@@ -17,3 +18,506 @@ regras:
     check: checks/check_nomenclatura_db.py
     descricao: Colunas de banco no formato <prefixo>_<tudojunto> (prefixos em rules/nomenclatura-db.json).
     como_corrigir: Renomear a coluna (migration e @Column/@JoinColumn) para o padrao.
+
+  - id: EV-ARC-001
+    severidade: CRITICO
+    tipo: semantico
+    descricao: Tenant nao via repository.central / centralTransactionManager, exceto catalogo/auth documentado.
+    fonte: .cursor/rules/architecture.mdc
+
+  - id: EV-ARC-002
+    severidade: CRITICO
+    tipo: semantico
+    descricao: Catalogo/permissoes centrais nao so no EntityManager tenant.
+    fonte: .cursor/rules/architecture.mdc
+
+  - id: EV-ARC-003
+    severidade: IMPORTANTE
+    tipo: semantico
+    descricao: Controller fino; negocio no service.
+    fonte: .cursor/rules/architecture.mdc
+
+  - id: EV-ARC-004
+    severidade: IMPORTANTE
+    tipo: semantico
+    descricao: Mapper @Component; sem mapeamento pesado no controller.
+    fonte: .cursor/rules/architecture.mdc
+
+  - id: EV-ARC-005
+    severidade: IMPORTANTE
+    tipo: semi
+    descricao: Pacotes dto.{dominio}, mapper, repository alinhados ao dominio.
+    fonte: .cursor/rules/architecture.mdc
+
+  - id: EV-ARC-006
+    severidade: MELHORIA
+    tipo: semi
+    descricao: "@AllArgsConstructor ou construtor explicito."
+    fonte: .cursor/rules/architecture.mdc
+
+  - id: EV-CTL-001
+    severidade: IMPORTANTE
+    tipo: semantico
+    descricao: Toda regra de negocio no diff passa pelo *Service; controller so HTTP.
+    fonte: .cursor/rules/ev-controllers.mdc
+
+  - id: EV-CTL-002
+    severidade: IMPORTANTE
+    tipo: estatico
+    check: checks/check_controller_injecao.py
+    status: pendente
+    descricao: Controller nao injeta *Repository, EntityManager nem JdbcTemplate (codigo novo no diff).
+    fonte: .cursor/rules/ev-controllers.mdc
+
+  - id: EV-CTL-003
+    severidade: IMPORTANTE
+    tipo: semi
+    descricao: Controller nao lanca BusinessException / ConflictException / ResourceNotFoundException por regra de dominio.
+    fonte: .cursor/rules/ev-controllers.mdc
+
+  - id: EV-CTL-004
+    severidade: IMPORTANTE
+    tipo: estatico
+    check: checks/check_controller_transactional.py
+    status: pendente
+    descricao: Sem @Transactional no controller (EV-TXN-003).
+    fonte: .cursor/rules/ev-controllers.mdc
+
+  - id: EV-CTL-005
+    severidade: MELHORIA
+    tipo: semantico
+    descricao: Sem mapeamento entity<->DTO pesado no controller; usar *Mapper no service.
+    fonte: .cursor/rules/ev-controllers.mdc
+
+  - id: EV-DDL-001
+    severidade: IMPORTANTE
+    tipo: semi
+    descricao: Nomes de tabela/coluna/constraint literais da SPEC iguais na migration, @Column e ConstraintMessageMap.
+    fonte: .cursor/rules/ev-ddl-nomenclatura.mdc
+
+  - id: EV-DTO-001
+    severidade: IMPORTANTE
+    tipo: semi
+    descricao: DTOs em dto.*; nao expor entity no controller.
+    fonte: .cursor/rules/rest-api.mdc
+
+  - id: EV-DTO-002
+    severidade: MELHORIA
+    tipo: semi
+    descricao: Records; JSON camelCase.
+    fonte: .cursor/rules/rest-api.mdc
+
+  - id: EV-ESP-001
+    severidade: IMPORTANTE
+    tipo: semantico
+    descricao: docs/*.md da feature consistente com codigo.
+    fonte: .cursor/rules/project-conventions.mdc
+
+  - id: EV-ESP-002
+    severidade: IMPORTANTE
+    tipo: semantico
+    descricao: "AGENTS.md: nao inventar pacote sem analisar repo."
+    fonte: .cursor/rules/project-conventions.mdc
+
+  - id: EV-ESP-003
+    severidade: IMPORTANTE
+    tipo: semantico
+    descricao: Confrontar migration/entity com docs/arquitetura-banco-atual.md; doc desatualizada nao e achado.
+    fonte: .cursor/rules/project-conventions.mdc
+
+  - id: EV-ESP-004
+    severidade: IMPORTANTE
+    tipo: semantico
+    descricao: Validacao de permissoes confrontada com docs/migrations-permissoes.md.
+    fonte: .cursor/rules/project-conventions.mdc
+
+  - id: EV-EXC-001
+    severidade: IMPORTANTE
+    tipo: semi
+    descricao: Nao engolir excecao no controller.
+    fonte: .cursor/rules/validation.mdc
+
+  - id: EV-EXC-002
+    severidade: IMPORTANTE
+    tipo: semi
+    descricao: Excecoes do pacote exception.
+    fonte: .cursor/rules/validation.mdc
+
+  - id: EV-EXC-003
+    severidade: MELHORIA
+    tipo: semantico
+    descricao: StructuredAccessDeniedException quando 403 estruturado no handler.
+    fonte: .cursor/rules/validation.mdc
+
+  - id: EV-LST-001
+    severidade: IMPORTANTE
+    tipo: semi
+    descricao: Novo listar/GET de colecao com Pageable e os 4 headers de paginacao, salvo excecao na SPEC.
+    fonte: .cursor/rules/ev-listagem.mdc
+
+  - id: EV-LST-002
+    severidade: IMPORTANTE
+    tipo: semi
+    descricao: Novo listar com *Filter quando o vizinho ja expoe XxxFilter.
+    fonte: .cursor/rules/ev-listagem.mdc
+
+  - id: EV-LST-003
+    severidade: MELHORIA
+    tipo: semi
+    descricao: listar no service retornando List<> em cadastro paginavel no vizinho -> sugerir Page<>.
+    fonte: .cursor/rules/ev-listagem.mdc
+
+  - id: EV-MD-001
+    severidade: IMPORTANTE
+    tipo: semi
+    descricao: Nova aba/filho comparada com outro filho ja agregado no mesmo pai (gap de agregado).
+    fonte: .cursor/rules/ev-mestre-detalhe.mdc
+
+  - id: EV-MD-002
+    severidade: IMPORTANTE
+    tipo: semantico
+    descricao: Leitura da aba consistente com o modulo de referencia e com outros filhos do mesmo pai.
+    fonte: .cursor/rules/ev-mestre-detalhe.mdc
+
+  - id: EV-MD-003
+    severidade: CRITICO
+    tipo: semantico
+    descricao: POST do pai sem id e filho com FK obrigatoria persistivel no primeiro save quando o aceite exige.
+    fonte: .cursor/rules/ev-mestre-detalhe.mdc
+
+  - id: EV-MD-004
+    severidade: IMPORTANTE
+    tipo: semi
+    fatos: scripts/filho_pai_analyze.py
+    descricao: Sem *Controller so para o filho/aba quando o padrao e sub-rota no controller do pai, salvo justificativa.
+    fonte: .cursor/rules/ev-mestre-detalhe.mdc
+
+  - id: EV-MTN-001
+    severidade: CRITICO
+    tipo: semantico
+    descricao: CRUD/list tenant filtra por idOrganizacao do contexto.
+    fonte: .cursor/rules/multi-tenant.mdc
+
+  - id: EV-MTN-002
+    severidade: CRITICO
+    tipo: semantico
+    descricao: findById em tenant valida organizacao.
+    fonte: .cursor/rules/multi-tenant.mdc
+
+  - id: EV-MTN-003
+    severidade: CRITICO
+    tipo: semantico
+    descricao: Sem query tenant sem org quando JWT exige org.
+    fonte: .cursor/rules/multi-tenant.mdc
+
+  - id: EV-MTN-004
+    severidade: IMPORTANTE
+    tipo: semantico
+    descricao: Ref. catalogo central no tenant sem FK cross-DB; validar no service.
+    fonte: .cursor/rules/multi-tenant.mdc
+
+  - id: EV-MTN-005
+    severidade: IMPORTANTE
+    tipo: semi
+    descricao: TX tenant + central com centralTransactionManager explicito.
+    fonte: .cursor/rules/multi-tenant.mdc
+
+  - id: EV-MTN-006
+    severidade: MELHORIA
+    tipo: semi
+    descricao: Usar TenantContextService, nao SecurityContext direto.
+    fonte: .cursor/rules/multi-tenant.mdc
+
+  - id: EV-NOM-001
+    severidade: MELHORIA
+    tipo: estatico
+    check: checks/check_url_kebab.py
+    status: pendente
+    descricao: URL kebab-case; permissao = segmento.
+    fonte: .cursor/rules/project-conventions.mdc
+
+  - id: EV-NOM-002
+    severidade: MELHORIA
+    tipo: semantico
+    descricao: Pacote/nome do dominio consistente.
+    fonte: .cursor/rules/project-conventions.mdc
+
+  - id: EV-NOM-003
+    severidade: IMPORTANTE
+    tipo: semi
+    descricao: Codigo novo com identificadores em portugues e prefixos do projeto; proibido ingles generico.
+    fonte: .cursor/rules/project-conventions.mdc
+
+  - id: EV-NOM-004
+    severidade: IMPORTANTE
+    tipo: semi
+    descricao: Classes @Entity novas de negocio com nome em portugues.
+    fonte: .cursor/rules/project-conventions.mdc
+
+  - id: EV-PER-001
+    severidade: CRITICO
+    tipo: semi
+    descricao: Schema/permissao central em db/central.
+    fonte: .cursor/rules/persistence.mdc
+
+  - id: EV-PER-002
+    severidade: CRITICO
+    tipo: semi
+    descricao: Negocio tenant em db/migration.
+    fonte: .cursor/rules/persistence.mdc
+
+  - id: EV-PER-003
+    severidade: IMPORTANTE
+    tipo: semi
+    descricao: "Permissoes: upsert modulo + permissao_global + ON CONFLICT."
+    fonte: .cursor/rules/persistence.mdc
+
+  - id: EV-PER-004
+    severidade: IMPORTANTE
+    tipo: estatico
+    check: checks/check_migration_versionada.py
+    status: pendente
+    descricao: Migration V{N}__descricao.sql; correcao = nova migration (nao editar/apagar V*.sql versionada).
+    fonte: .cursor/rules/persistence.mdc
+
+  - id: EV-PER-005
+    severidade: IMPORTANTE
+    tipo: semantico
+    descricao: DDL/FK/indices tenant coerentes com padroes do projeto.
+    fonte: .cursor/rules/persistence.mdc
+
+  - id: EV-PER-006
+    severidade: CRITICO
+    tipo: semantico
+    descricao: Migration nao impede startup nem corrompe integridade de dados existentes.
+    fonte: .cursor/rules/persistence.mdc
+
+  - id: EV-PRF-001
+    severidade: IMPORTANTE
+    tipo: semi
+    descricao: Listagens tenant com filtro org; evitar findAll sem limite em tabelas grandes.
+    fonte: .cursor/rules/persistence.mdc
+
+  - id: EV-PRF-002
+    severidade: MELHORIA
+    tipo: semantico
+    descricao: Evitar N+1 em listas.
+    fonte: .cursor/rules/persistence.mdc
+
+  - id: EV-REST-001
+    severidade: CRITICO
+    tipo: semi
+    descricao: "@RequestMapping alinhado a permissao dinamica (1o segmento)."
+    fonte: .cursor/rules/rest-api.mdc
+
+  - id: EV-REST-002
+    severidade: IMPORTANTE
+    tipo: semi
+    descricao: "@Valid em body de escrita com constraints."
+    fonte: .cursor/rules/rest-api.mdc
+
+  - id: EV-REST-003
+    severidade: IMPORTANTE
+    tipo: semi
+    descricao: Com Pageable, enviar os 4 headers de paginacao.
+    fonte: .cursor/rules/rest-api.mdc
+
+  - id: EV-REST-004
+    severidade: IMPORTANTE
+    tipo: semantico
+    descricao: Contrato HTTP alinhado ao modulo (envelope/headers).
+    fonte: .cursor/rules/rest-api.mdc
+
+  - id: EV-REST-005
+    severidade: MELHORIA
+    tipo: semi
+    descricao: Filtros de listagem com @ParameterObject quando o vizinho usa.
+    fonte: .cursor/rules/rest-api.mdc
+
+  - id: EV-REST-006
+    severidade: IMPORTANTE
+    tipo: semi
+    descricao: Path fixo da feature nao capturado so por /{id} em controller com prefixo ancestral.
+    fonte: .cursor/rules/rest-api.mdc
+
+  - id: EV-REST-007
+    severidade: IMPORTANTE
+    tipo: semi
+    descricao: Com escopo ampliado, cada metodo+path da SPEC existe no codigo.
+    fonte: .cursor/rules/rest-api.mdc
+
+  - id: EV-REU-001
+    severidade: IMPORTANTE
+    tipo: semantico
+    descricao: Reusar shared, specs, mappers existentes.
+    fonte: .cursor/rules/project-conventions.mdc
+
+  - id: EV-REU-002
+    severidade: MELHORIA
+    tipo: semantico
+    descricao: Padrao CRUD do modulo vizinho.
+    fonte: .cursor/rules/project-conventions.mdc
+
+  - id: EV-SEC-001
+    severidade: CRITICO
+    tipo: semi
+    descricao: Endpoint nao ignorado com permissao_global.nm_chave de prefixo = 1o segmento da rota.
+    fonte: .cursor/rules/security.mdc
+
+  - id: EV-SEC-002
+    severidade: CRITICO
+    tipo: semi
+    descricao: URL e chave de permissao alinhadas.
+    fonte: .cursor/rules/security.mdc
+
+  - id: EV-SEC-003
+    severidade: CRITICO
+    tipo: semantico
+    descricao: Dados de org nao so authenticated() sem filtro/PreAuthorize.
+    fonte: .cursor/rules/security.mdc
+
+  - id: EV-SEC-004
+    severidade: IMPORTANTE
+    tipo: semi
+    descricao: "@RequerModulo no modulo de produto, salvo excecao documentada."
+    fonte: .cursor/rules/security.mdc
+
+  - id: EV-SEC-005
+    severidade: IMPORTANTE
+    tipo: semi
+    descricao: /admin/** com @PreAuthorize como controllers sistema.
+    fonte: .cursor/rules/security.mdc
+
+  - id: EV-SEC-006
+    severidade: IMPORTANTE
+    tipo: semi
+    descricao: "Migration: permissao_global.id_modulo = modulo raiz; nm_modulo = submodulo."
+    fonte: .cursor/rules/security.mdc
+
+  - id: EV-SEC-007
+    severidade: MELHORIA
+    tipo: semi
+    descricao: Teste em DynamicRoutePermissionFilterTest para rotas novas.
+    fonte: .cursor/rules/security.mdc
+
+  - id: EV-SEC-008
+    severidade: IMPORTANTE
+    tipo: semi
+    descricao: Migration de permissao segue checklist de docs/migrations-permissoes.md.
+    fonte: .cursor/rules/security.mdc
+
+  - id: EV-SVC-001
+    severidade: IMPORTANTE
+    tipo: semi
+    descricao: Service tenant nao injeta EntityManager, JdbcTemplate nem NamedParameterJdbcTemplate.
+    fonte: .cursor/rules/ev-services.mdc
+
+  - id: EV-SVC-002
+    severidade: IMPORTANTE
+    tipo: estatico
+    check: checks/check_javadoc_publico.py
+    status: pendente
+    descricao: Classe *Service nova ou metodos publicos novos com JavaDoc.
+    fonte: .cursor/rules/ev-services.mdc
+
+  - id: EV-SVC-003
+    severidade: IMPORTANTE
+    tipo: estatico
+    status: substituida
+    substituida_por: EV-COM-001
+    descricao: Sem comentarios // ou /* */ no corpo de metodos.
+    fonte: .cursor/rules/ev-services.mdc
+
+  - id: EV-SVC-004
+    severidade: IMPORTANTE
+    tipo: semi
+    descricao: Nao introduzir metodos public/private sem uso no projeto.
+    fonte: .cursor/rules/ev-services.mdc
+
+  - id: EV-SVC-005
+    severidade: MELHORIA
+    tipo: estatico
+    check: checks/check_javadoc_tags.py
+    status: pendente
+    descricao: "@author e @since nos JavaDocs de metodos publicos novos."
+    fonte: .cursor/rules/ev-services.mdc
+
+  - id: EV-TST-001
+    severidade: IMPORTANTE
+    tipo: semi
+    descricao: "Novo controller: @WebMvcTest (status, JSON, headers)."
+    fonte: .cursor/rules/testing.mdc
+
+  - id: EV-TST-002
+    severidade: IMPORTANTE
+    tipo: semi
+    descricao: "Rota nova: teste no filtro de permissao."
+    fonte: .cursor/rules/testing.mdc
+
+  - id: EV-TST-003
+    severidade: IMPORTANTE
+    tipo: semantico
+    descricao: "Service com regra: teste unitario."
+    fonte: .cursor/rules/testing.mdc
+
+  - id: EV-TST-004
+    severidade: IMPORTANTE
+    tipo: semi
+    descricao: "Migration seed/permissao: teste de contrato SQL."
+    fonte: .cursor/rules/testing.mdc
+
+  - id: EV-TST-005
+    severidade: MELHORIA
+    tipo: semi
+    descricao: "@DisplayName em portugues."
+    fonte: .cursor/rules/testing.mdc
+
+  - id: EV-TST-006
+    severidade: MELHORIA
+    tipo: semantico
+    descricao: Nao so contextLoads como prova da feature.
+    fonte: .cursor/rules/testing.mdc
+
+  - id: EV-TXN-001
+    severidade: IMPORTANTE
+    tipo: semi
+    descricao: Escrita @Transactional; leitura readOnly = true.
+    fonte: .cursor/rules/persistence.mdc
+
+  - id: EV-TXN-002
+    severidade: CRITICO
+    tipo: semi
+    descricao: Repo central -> centralTransactionManager.
+    fonte: .cursor/rules/persistence.mdc
+
+  - id: EV-TXN-003
+    severidade: MELHORIA
+    tipo: estatico
+    check: checks/check_controller_transactional.py
+    status: pendente
+    descricao: Sem @Transactional no controller.
+    fonte: .cursor/rules/persistence.mdc
+
+  - id: EV-VAL-001
+    severidade: IMPORTANTE
+    tipo: semantico
+    descricao: Obrigatorios no DTO ou validacao no service.
+    fonte: .cursor/rules/validation.mdc
+
+  - id: EV-VAL-002
+    severidade: IMPORTANTE
+    tipo: semantico
+    descricao: Regra de negocio no service.
+    fonte: .cursor/rules/validation.mdc
+
+  - id: EV-VAL-003
+    severidade: MELHORIA
+    tipo: semantico
+    descricao: Mensagens em portugues.
+    fonte: .cursor/rules/validation.mdc
+
+  - id: EV-VAL-004
+    severidade: IMPORTANTE
+    tipo: semantico
+    descricao: Validacao por lista fechada trata registros legados na edicao ou documenta na SPEC.
+    fonte: .cursor/rules/validation.mdc
