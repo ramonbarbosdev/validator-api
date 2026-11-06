@@ -37,6 +37,49 @@ Instalar regras no projeto da API:
 .\pack\install\install.ps1 -Target C:\path\sua-api -Stack java-spring-esimples
 ```
 
+## Validador híbrido (motor estático + LLM)
+
+Fluxo de cada validação de PR:
+
+1. `ci-api-validator.py` roda o motor declarativo (`pack/engine`, tree-sitter Java + extrator SQL) sobre as **linhas adicionadas** em `git diff origin/<base>...HEAD` e grava `findings-estaticos.json` no repo.
+2. O prompt do agente recebe o bloco `## ACHADOS ESTATICOS CONFIRMADOS`: o LLM não reanalisa essas regras e foca nas semânticas.
+3. `validate-api-validator-report.py` mescla no relatório os achados que o LLM omitiu (`merge_static_findings.py`, idempotente) e **recalcula a Conclusão em código** (Crítico ou Importante ⇒ `NAO APROVAVEL`).
+4. `report_gate.needs_block_label` aplica o mesmo merge antes de decidir as labels.
+
+Flag `VALIDATOR_STATIC_CHECKS` (padrão ligado; `0`/`false`/`no`/`off` desliga). Desligada, o prompt é idêntico ao legado (snapshot em `tests/snapshots/`). Falha do motor ou de uma regra vira `falhas_de_regra` no JSON e nunca derruba a validação.
+
+| Arquivo | Papel |
+|---------|-------|
+| `pack/rules/padroes.yaml` | Regras executáveis pelo motor (tipos em `pack/engine/GUIA.md`) |
+| `pack/rules/catalog.yaml` | Metadados de todas as regras EV-* (`tipo`, `status`, `check: rules/padroes.yaml#ID`) |
+| `pack/scripts/run_static_checks.py` | Wrapper do motor + flag + `findings-estaticos.json` |
+| `pack/scripts/merge_static_findings.py` | Merge no relatório + Conclusão calculada |
+| `pack/scripts/backtest.py` | Backtest offline por intervalo de commits |
+
+### Adicionar uma regra estática
+
+1. Adicione a regra em `pack/rules/padroes.yaml` (id, tipo, severidade, arquivos, mensagem, como_corrigir).
+2. No `catalog.yaml`, marque a regra como `tipo: estatico` e `check: rules/padroes.yaml#<ID>`. Para uma regra ainda não pronta, use `status: pendente`.
+3. Crie `tests/fixtures/<ID>/ruim/` (deve disparar) e `tests/fixtures/<ID>/bom/` (não deve), com caminhos iguais aos do repo da API. O `test_fixtures.py` exige fixture para toda regra estática ativa.
+
+### Testes e lint
+
+```powershell
+pip install -e ".[dev]"
+pytest -q
+ruff check .
+```
+
+O workflow `.github/workflows/ci.yml` roda os mesmos comandos em pull_request e push.
+
+### Backtest
+
+Mede quantos achados cada regra geraria em PRs passadas, sem rede (usa worktree temporário + ref local, ambos removidos ao final):
+
+```powershell
+python pack/scripts/backtest.py --repo ..\esimples-api --range origin/develop~30..origin/develop --json backtest.json
+```
+
 ## CLI
 
 | Comando | Descrição |
