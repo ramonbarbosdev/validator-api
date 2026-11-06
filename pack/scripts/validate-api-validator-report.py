@@ -8,7 +8,9 @@ import subprocess
 import sys
 from pathlib import Path
 
+from merge_static_findings import merge as merge_static_findings
 from report_public import write_public_report
+from run_static_checks import load_findings, static_checks_enabled
 from report_quality import (
     has_previous_round_checklist,
     mentions_any_changed_file,
@@ -78,6 +80,24 @@ def check_conclusion_matches_findings(body: str) -> str | None:
     return None
 
 
+def apply_static_findings(root: Path, report: Path, text: str) -> str:
+    """Com `VALIDATOR_STATIC_CHECKS` ligado e findings-estaticos.json presente, mescla e regrava o relatorio."""
+    if not static_checks_enabled():
+        return text
+    findings = load_findings(root)
+    if findings is None:
+        return text
+    try:
+        merged = merge_static_findings(text, findings)
+    except Exception as e:
+        print(f"AVISO: merge de achados estaticos falhou ({e}); relatorio mantido.", file=sys.stderr)
+        return text
+    if merged != text:
+        report.write_text(merged, encoding="utf-8")
+        print("Achados estaticos mesclados no relatorio (Conclusao recalculada).", file=sys.stderr)
+    return merged
+
+
 def main() -> int:
     root = Path(os.environ.get("REPO_ROOT", ".")).resolve()
     report = root / "api-validator-report.md"
@@ -85,7 +105,7 @@ def main() -> int:
         print(f"Falta {report}", file=sys.stderr)
         return 1
 
-    text = report.read_text(encoding="utf-8")
+    text = apply_static_findings(root, report, report.read_text(encoding="utf-8"))
     body = text
     for heading in ("## Review", "## API Validator", "## Código Review"):
         if heading in text:

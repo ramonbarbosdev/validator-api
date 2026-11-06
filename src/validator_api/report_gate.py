@@ -13,6 +13,24 @@ def _pack_scripts(validator_root: Path) -> None:
             sys.path.insert(0, p)
 
 
+def _with_static_findings(report_text: str, repo_root: Path) -> str:
+    """Mescla findings-estaticos.json (se a flag estiver ligada); qualquer erro devolve o texto original."""
+    try:
+        from merge_static_findings import merge
+        from run_static_checks import load_findings, static_checks_enabled
+    except ImportError:
+        return report_text
+    if not static_checks_enabled():
+        return report_text
+    findings = load_findings(repo_root)
+    if findings is None:
+        return report_text
+    try:
+        return merge(report_text, findings)
+    except Exception:
+        return report_text
+
+
 def needs_block_label(
     report_text: str,
     repo_root: Path,
@@ -33,6 +51,8 @@ def needs_block_label(
         from validator_api.github import parse_report_verdict
 
         return parse_report_verdict(report_text) != "aprovavel"
+
+    report_text = _with_static_findings(report_text, repo_root)
 
     sections = report_sections(report_text)
     if section_has_findings(sections.get("critico", "")):
