@@ -1,0 +1,19 @@
+# Catalogo de regras: fonte unica para scripts, prompt e gate.
+# tipo: estatico (script decide) | semantico (LLM decide)
+regras:
+  - id: EV-COM-001
+    severidade: IMPORTANTE
+    tipo: estatico
+    aplica_a: ["**/*.java"]
+    check: checks/check_comentarios.py
+    descricao: Proibido comentario (// ou /* */) em qualquer parte do codigo Java; apenas JavaDoc.
+    como_corrigir: Remover o comentario ou migrar a informacao para JavaDoc da declaracao.
+    substitui: EV-SVC-003   # a antiga cobria so service/controller/security e so dentro de metodo
+
+  - id: EV-DDL-002
+    severidade: IMPORTANTE
+    tipo: estatico
+    aplica_a: ["**/db/**/*.sql", "**/*.java"]
+    check: checks/check_nomenclatura_db.py
+    descricao: Colunas de banco no formato <prefixo>_<tudojunto> (prefixos em rules/nomenclatura-db.json).
+    como_corrigir: Renomear a coluna (migration e @Column/@JoinColumn) para o padrao.

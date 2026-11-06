@@ -1,0 +1,4 @@
+{
+  "fonte": "docs/padrao/nomenclatura-colunas-sql.md, docs/padrao/nomenclatura-portugues.md, docs/padrao/banco.md",
+  "prefixos": ["id", "nm", "ds", "fl", "dt", "vl", "tp", "cd"]
+}
